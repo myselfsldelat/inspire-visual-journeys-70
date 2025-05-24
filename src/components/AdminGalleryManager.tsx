@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { GalleryItem } from '@/data/gallery';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -22,8 +22,9 @@ import {
 } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
-import { Edit, Trash, Image, Plus, Camera, RefreshCw, Loader2 } from 'lucide-react';
+import { Edit, Trash, Image, Plus, Camera, RefreshCw, Loader2, Upload } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import MediaUploadManager from './MediaUploadManager';
 
 interface GalleryItemFormData {
   title: string;
@@ -209,106 +210,121 @@ const AdminGalleryManager: React.FC = () => {
     <div className="bg-white rounded-lg shadow p-6 my-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-event-dark">Gerenciar Galeria</h2>
-        <div className="flex gap-2">
-          <Button 
-            onClick={refreshGallery}
-            variant="outline"
-            disabled={isRefreshing}
-            className="flex items-center gap-1"
-          >
-            {isRefreshing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            Atualizar
-          </Button>
-          <Button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="bg-event-green hover:bg-green-600"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Nova Imagem
-          </Button>
-        </div>
+        <Button 
+          onClick={refreshGallery}
+          variant="outline"
+          disabled={isRefreshing}
+          className="flex items-center gap-1"
+        >
+          {isRefreshing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
+          Atualizar
+        </Button>
       </div>
-      
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertTitle>Erro ao carregar imagens</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      
-      {loading ? (
-        <div className="flex flex-col justify-center items-center py-12">
-          <Loader2 className="w-10 h-10 text-event-orange animate-spin mb-4" />
-          <div className="text-center">Carregando imagens da galeria...</div>
-        </div>
-      ) : items.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-          <Image className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhuma imagem encontrada</h3>
-          <p className="text-gray-500 mb-4">Adicione imagens à galeria para que elas apareçam aqui.</p>
-          <Button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="bg-event-green hover:bg-green-600"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Primeira Imagem
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.map((item) => (
-            <div key={String(item.id)} className="border rounded-lg overflow-hidden bg-gray-50">
-              <div className="h-48 overflow-hidden">
-                <img 
-                  src={item.image} 
-                  alt={item.title} 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
-              </div>
-              
-              <div className="p-4">
-                <h3 className="font-bold text-lg mb-1 truncate">{item.title}</h3>
-                <p className="text-gray-600 text-sm line-clamp-2 h-10">
-                  {item.description}
-                </p>
-                
-                <div className="flex justify-between mt-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setSelectedItem(item);
-                      setIsEditModalOpen(true);
-                    }}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar
-                  </Button>
-                  
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={() => {
-                      setSelectedItem(item);
-                      setIsDeleteModalOpen(true);
-                    }}
-                  >
-                    <Trash className="h-4 w-4 mr-2" />
-                    Excluir
-                  </Button>
-                </div>
-              </div>
+
+      <Tabs defaultValue="upload" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="upload" className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Novo Upload
+          </TabsTrigger>
+          <TabsTrigger value="manage" className="flex items-center gap-2">
+            <Image className="h-4 w-4" />
+            Gerenciar Existentes
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="upload" className="mt-6">
+          <MediaUploadManager />
+        </TabsContent>
+
+        <TabsContent value="manage" className="mt-6">
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertTitle>Erro ao carregar imagens</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold">Itens Existentes</h3>
+            <Button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-event-green hover:bg-green-600"
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Manual
+            </Button>
+          </div>
+          
+          {loading ? (
+            <div className="flex flex-col justify-center items-center py-12">
+              <Loader2 className="w-10 h-10 text-event-orange animate-spin mb-4" />
+              <div className="text-center">Carregando imagens da galeria...</div>
             </div>
-          ))}
-        </div>
-      )}
+          ) : items.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+              <Image className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhuma imagem encontrada</h3>
+              <p className="text-gray-500 mb-4">Use a aba "Novo Upload" para adicionar imagens e vídeos.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {items.map((item) => (
+                <div key={String(item.id)} className="border rounded-lg overflow-hidden bg-gray-50">
+                  <div className="h-48 overflow-hidden">
+                    <img 
+                      src={item.image} 
+                      alt={item.title} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="p-4">
+                    <h3 className="font-bold text-lg mb-1 truncate">{item.title}</h3>
+                    <p className="text-gray-600 text-sm line-clamp-2 h-10">
+                      {item.description}
+                    </p>
+                    
+                    <div className="flex justify-between mt-4">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedItem(item);
+                          setIsEditModalOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
+                      </Button>
+                      
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedItem(item);
+                          setIsDeleteModalOpen(true);
+                        }}
+                      >
+                        <Trash className="h-4 w-4 mr-2" />
+                        Excluir
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
       
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
@@ -349,7 +365,7 @@ const AdminGalleryManager: React.FC = () => {
                           onClick={() => {
                             toast({
                               title: "Upload de imagem",
-                              description: "Em um ambiente de produção, isso abriria um seletor de arquivos.",
+                              description: "Use a aba 'Novo Upload' para enviar arquivos.",
                             });
                           }}
                         >
@@ -446,7 +462,7 @@ const AdminGalleryManager: React.FC = () => {
                           onClick={() => {
                             toast({
                               title: "Upload de imagem",
-                              description: "Em um ambiente de produção, isso abriria um seletor de arquivos.",
+                              description: "Use a aba 'Novo Upload' para enviar arquivos.",
                             });
                           }}
                         >
