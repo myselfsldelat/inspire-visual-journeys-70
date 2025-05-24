@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -207,14 +208,17 @@ const AdminGalleryManager: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 my-6">
+    <div className="bg-white rounded-lg shadow-lg p-6 my-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-event-dark">Gerenciar Galeria</h2>
+        <div className="flex items-center gap-3">
+          <Camera className="h-8 w-8 text-event-orange" />
+          <h2 className="text-3xl font-bold text-event-dark">Gerenciar Galeria</h2>
+        </div>
         <Button 
           onClick={refreshGallery}
           variant="outline"
           disabled={isRefreshing}
-          className="flex items-center gap-1"
+          className="flex items-center gap-2 hover:bg-gray-50"
         >
           {isRefreshing ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -226,14 +230,14 @@ const AdminGalleryManager: React.FC = () => {
       </div>
 
       <Tabs defaultValue="upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="upload" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="upload" className="flex items-center gap-2 py-3">
             <Upload className="h-4 w-4" />
             Novo Upload
           </TabsTrigger>
-          <TabsTrigger value="manage" className="flex items-center gap-2">
+          <TabsTrigger value="manage" className="flex items-center gap-2 py-3">
             <Image className="h-4 w-4" />
-            Gerenciar Existentes
+            Gerenciar Existentes ({items.length})
           </TabsTrigger>
         </TabsList>
 
@@ -250,37 +254,44 @@ const AdminGalleryManager: React.FC = () => {
           )}
           
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold">Itens Existentes</h3>
+            <h3 className="text-xl font-semibold text-gray-800">Itens da Galeria</h3>
             <Button 
               onClick={() => setIsAddModalOpen(true)}
-              className="bg-event-green hover:bg-green-600"
+              className="bg-event-green hover:bg-green-600 flex items-center gap-2"
               size="sm"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4" />
               Adicionar Manual
             </Button>
           </div>
           
           {loading ? (
-            <div className="flex flex-col justify-center items-center py-12">
-              <Loader2 className="w-10 h-10 text-event-orange animate-spin mb-4" />
-              <div className="text-center">Carregando imagens da galeria...</div>
+            <div className="flex flex-col justify-center items-center py-16">
+              <Loader2 className="w-12 h-12 text-event-orange animate-spin mb-4" />
+              <div className="text-lg text-gray-600">Carregando galeria...</div>
             </div>
           ) : items.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-              <Image className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhuma imagem encontrada</h3>
-              <p className="text-gray-500 mb-4">Use a aba "Novo Upload" para adicionar imagens e vídeos.</p>
+            <div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <Image className="h-20 w-20 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-gray-900 mb-2">Nenhuma imagem encontrada</h3>
+              <p className="text-gray-500 mb-6">Comece adicionando imagens e vídeos à sua galeria.</p>
+              <Button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="bg-event-orange hover:bg-orange-600"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Primeira Imagem
+              </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {items.map((item) => (
-                <div key={String(item.id)} className="border rounded-lg overflow-hidden bg-gray-50">
-                  <div className="h-48 overflow-hidden">
+                <div key={String(item.id)} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                  <div className="h-48 overflow-hidden bg-gray-100">
                     <img 
                       src={item.image} 
                       alt={item.title} 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = '/placeholder.svg';
                       }}
@@ -288,12 +299,15 @@ const AdminGalleryManager: React.FC = () => {
                   </div>
                   
                   <div className="p-4">
-                    <h3 className="font-bold text-lg mb-1 truncate">{item.title}</h3>
-                    <p className="text-gray-600 text-sm line-clamp-2 h-10">
-                      {item.description}
+                    <h3 className="font-semibold text-lg mb-2 text-gray-800 line-clamp-1">{item.title}</h3>
+                    <p className="text-gray-600 text-sm line-clamp-2 h-10 mb-3">
+                      {item.description || 'Sem descrição'}
                     </p>
+                    <div className="text-xs text-gray-500 mb-3">
+                      Adicionado em: {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                    </div>
                     
-                    <div className="flex justify-between mt-4">
+                    <div className="flex justify-between gap-2">
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -301,20 +315,22 @@ const AdminGalleryManager: React.FC = () => {
                           setSelectedItem(item);
                           setIsEditModalOpen(true);
                         }}
+                        className="flex-1 hover:bg-blue-50 hover:border-blue-300"
                       >
-                        <Edit className="h-4 w-4 mr-2" />
+                        <Edit className="h-4 w-4 mr-1" />
                         Editar
                       </Button>
                       
                       <Button 
-                        variant="destructive" 
+                        variant="outline" 
                         size="sm"
                         onClick={() => {
                           setSelectedItem(item);
                           setIsDeleteModalOpen(true);
                         }}
+                        className="flex-1 hover:bg-red-50 hover:border-red-300 text-red-600"
                       >
-                        <Trash className="h-4 w-4 mr-2" />
+                        <Trash className="h-4 w-4 mr-1" />
                         Excluir
                       </Button>
                     </div>
@@ -330,7 +346,10 @@ const AdminGalleryManager: React.FC = () => {
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Editar Imagem</DialogTitle>
+            <DialogTitle>Editar Item da Galeria</DialogTitle>
+            <DialogDescription>
+              Modifique as informações do item selecionado da galeria.
+            </DialogDescription>
           </DialogHeader>
           
           <Form {...form}>
@@ -356,22 +375,7 @@ const AdminGalleryManager: React.FC = () => {
                   <FormItem>
                     <FormLabel>URL da Imagem</FormLabel>
                     <FormControl>
-                      <div className="flex">
-                        <Input placeholder="https://exemplo.com/imagem.jpg" {...field} />
-                        <Button 
-                          type="button"
-                          variant="outline"
-                          className="ml-2"
-                          onClick={() => {
-                            toast({
-                              title: "Upload de imagem",
-                              description: "Use a aba 'Novo Upload' para enviar arquivos.",
-                            });
-                          }}
-                        >
-                          <Image className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Input placeholder="https://exemplo.com/imagem.jpg" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -399,7 +403,7 @@ const AdminGalleryManager: React.FC = () => {
                   <FormItem>
                     <FormLabel>Motivação</FormLabel>
                     <FormControl>
-                      <Input placeholder="Motivação ou mensagem inspiradora" {...field} />
+                      <Input placeholder="Mensagem inspiradora" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -428,6 +432,9 @@ const AdminGalleryManager: React.FC = () => {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Adicionar Nova Imagem</DialogTitle>
+            <DialogDescription>
+              Adicione um novo item à galeria preenchendo as informações abaixo.
+            </DialogDescription>
           </DialogHeader>
           
           <Form {...form}>
@@ -453,22 +460,7 @@ const AdminGalleryManager: React.FC = () => {
                   <FormItem>
                     <FormLabel>URL da Imagem</FormLabel>
                     <FormControl>
-                      <div className="flex">
-                        <Input placeholder="https://exemplo.com/imagem.jpg" {...field} />
-                        <Button 
-                          type="button"
-                          variant="outline"
-                          className="ml-2"
-                          onClick={() => {
-                            toast({
-                              title: "Upload de imagem",
-                              description: "Use a aba 'Novo Upload' para enviar arquivos.",
-                            });
-                          }}
-                        >
-                          <Image className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Input placeholder="https://exemplo.com/imagem.jpg" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -496,7 +488,7 @@ const AdminGalleryManager: React.FC = () => {
                   <FormItem>
                     <FormLabel>Motivação</FormLabel>
                     <FormControl>
-                      <Input placeholder="Motivação ou mensagem inspiradora" {...field} />
+                      <Input placeholder="Mensagem inspiradora" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -525,11 +517,16 @@ const AdminGalleryManager: React.FC = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Esta ação não pode ser desfeita. O item será permanentemente removido da galeria.
+            </DialogDescription>
           </DialogHeader>
           
-          <p>
-            Tem certeza que deseja excluir a imagem "{selectedItem?.title}"? Esta ação não pode ser desfeita.
-          </p>
+          <div className="py-4">
+            <p className="text-gray-700">
+              Tem certeza que deseja excluir <strong>"{selectedItem?.title}"</strong>?
+            </p>
+          </div>
           
           <DialogFooter>
             <Button 
@@ -542,7 +539,7 @@ const AdminGalleryManager: React.FC = () => {
               variant="destructive" 
               onClick={handleDeleteItem}
             >
-              Excluir
+              Excluir Permanentemente
             </Button>
           </DialogFooter>
         </DialogContent>
