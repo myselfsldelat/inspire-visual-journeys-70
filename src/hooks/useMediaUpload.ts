@@ -69,6 +69,8 @@ const useMediaUpload = () => {
     const successfulUploads: string[] = [];
 
     try {
+      console.log('Starting upload process for', mediaFiles.length, 'files');
+
       for (const mediaFile of mediaFiles) {
         const fileName = `${Date.now()}-${mediaFile.file.name}`;
         
@@ -78,55 +80,87 @@ const useMediaUpload = () => {
           { fileName: mediaFile.file.name, progress: 0, status: 'uploading' }
         ]);
 
-        // For now, we'll store the file as a base64 data URL since we don't have storage setup
-        const reader = new FileReader();
-        const fileDataPromise = new Promise<string>((resolve) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(mediaFile.file);
-        });
-
-        const fileData = await fileDataPromise;
-
-        // Insert into gallery_items table
-        const { error } = await supabase
-          .from('gallery_items')
-          .insert({
-            title: `${metadata.title} - ${mediaFile.file.name}`,
-            image: fileData, // Using data URL for now
-            description: metadata.description,
-            motivation: metadata.motivation,
+        try {
+          // Convert file to base64 data URL
+          const reader = new FileReader();
+          const fileDataPromise = new Promise<string>((resolve, reject) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
+            reader.readAsDataURL(mediaFile.file);
           });
 
-        if (error) throw error;
+          const fileData = await fileDataPromise;
 
-        // Update progress to success
-        setUploadProgress(prev => 
-          prev.map(p => 
-            p.fileName === mediaFile.file.name 
-              ? { ...p, progress: 100, status: 'success' as const }
-              : p
-          )
-        );
+          // Progress update to 50%
+          setUploadProgress(prev => 
+            prev.map(p => 
+              p.fileName === mediaFile.file.name 
+                ? { ...p, progress: 50 }
+                : p
+            )
+          );
 
-        successfulUploads.push(mediaFile.file.name);
+          // Insert into gallery_items table
+          const { error } = await supabase
+            .from('gallery_items')
+            .insert({
+              title: `${metadata.title} - ${mediaFile.file.name}`,
+              image: fileData,
+              description: metadata.description,
+              motivation: metadata.motivation,
+            });
+
+          if (error) {
+            console.error('Error inserting to database:', error);
+            throw error;
+          }
+
+          console.log('Successfully uploaded:', mediaFile.file.name);
+
+          // Update progress to success
+          setUploadProgress(prev => 
+            prev.map(p => 
+              p.fileName === mediaFile.file.name 
+                ? { ...p, progress: 100, status: 'success' as const }
+                : p
+            )
+          );
+
+          successfulUploads.push(mediaFile.file.name);
+        } catch (fileError: any) {
+          console.error('Error uploading file:', mediaFile.file.name, fileError);
+          
+          // Update progress to error for this specific file
+          setUploadProgress(prev => 
+            prev.map(p => 
+              p.fileName === mediaFile.file.name 
+                ? { ...p, status: 'error' as const }
+                : p
+            )
+          );
+
+          toast({
+            title: 'Erro no upload',
+            description: `Falha ao enviar ${mediaFile.file.name}: ${fileError.message}`,
+            variant: 'destructive',
+          });
+        }
       }
 
-      toast({
-        title: 'Upload concluído',
-        description: `${successfulUploads.length} arquivo(s) enviado(s) com sucesso.`,
-      });
+      if (successfulUploads.length > 0) {
+        toast({
+          title: 'Upload concluído',
+          description: `${successfulUploads.length} arquivo(s) enviado(s) com sucesso.`,
+        });
+      }
 
-      return true;
+      return successfulUploads.length > 0;
     } catch (error: any) {
-      console.error('Upload error:', error);
+      console.error('General upload error:', error);
       
-      setUploadProgress(prev => 
-        prev.map(p => ({ ...p, status: 'error' as const }))
-      );
-
       toast({
         title: 'Erro no upload',
-        description: error.message || 'Erro ao enviar arquivos.',
+        description: 'Erro geral ao enviar arquivos. Tente novamente.',
         variant: 'destructive',
       });
 

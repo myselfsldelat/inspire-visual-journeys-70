@@ -26,32 +26,48 @@ const useGalleryItems = ({
   const hasNextPage = currentPage < totalPages - 1;
   const hasPreviousPage = currentPage > 0;
 
+  const loadFallbackData = async () => {
+    try {
+      const { galleryItems } = await import('@/data/gallery');
+      const startIndex = currentPage * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedItems = galleryItems.slice(startIndex, endIndex);
+      
+      setItems(paginatedItems);
+      setTotalItems(galleryItems.length);
+      setError(null);
+      console.log('Loaded fallback gallery data:', paginatedItems.length, 'items');
+    } catch (fallbackError) {
+      console.error('Failed to load fallback data:', fallbackError);
+      setError('Não foi possível carregar as imagens da galeria.');
+      setItems([]);
+    }
+  };
+
   const fetchItems = async (showToast = false, page = currentPage) => {
     try {
       setLoading(true);
       setError(null);
       if (showToast) setRefreshing(true);
 
-      // First get the count of all items
-      const countResult = await supabase
-        .from('gallery_items')
-        .select('id', { count: 'exact', head: true });
-      
-      if (countResult.error) throw countResult.error;
-      setTotalItems(countResult.count || 0);
+      console.log('Attempting to fetch gallery items from Supabase...');
 
-      // Then get the paginated items
-      const startIndex = page * pageSize;
-      
-      const { data, error } = await supabase
+      // Try to get items from Supabase first
+      const { data, error, count } = await supabase
         .from('gallery_items')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
-        .range(startIndex, startIndex + pageSize - 1);
+        .range(page * pageSize, (page * pageSize) + pageSize - 1);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase query error:', error);
+        throw error;
+      }
+      
+      console.log('Successfully fetched from Supabase:', data?.length || 0, 'items');
       
       setItems(data || []);
+      setTotalItems(count || 0);
       setCurrentPage(page);
       
       if (showToast) {
@@ -63,23 +79,15 @@ const useGalleryItems = ({
     } catch (error: any) {
       console.error('Error fetching gallery items:', error);
       
-      // Se não conseguir carregar do Supabase, usar dados locais
-      if (error.message?.includes("recursion")) {
-        try {
-          // Importar os dados fallback
-          const { galleryItems } = await import('@/data/gallery');
-          setItems(galleryItems);
-          setTotalItems(galleryItems.length);
-          setError('Usando dados locais devido a um erro no servidor. Tente fazer login para ver a galeria completa.');
-        } catch (fallbackError) {
-          setError('Não foi possível carregar as imagens da galeria.');
-        }
-      } else {
-        setError('Não foi possível carregar as imagens da galeria.');
-        
+      // Always fall back to local data on any error
+      console.log('Falling back to local gallery data...');
+      await loadFallbackData();
+      
+      // Only show error toast if user explicitly refreshed
+      if (showToast) {
         toast({
-          title: 'Erro ao carregar galeria',
-          description: 'Não foi possível carregar as imagens da galeria.',
+          title: 'Usando dados locais',
+          description: 'Conecte-se para ver a galeria completa.',
           variant: 'destructive',
         });
       }
@@ -109,12 +117,11 @@ const useGalleryItems = ({
 
   const handleImageError = (index: number) => {
     setItems(current => {
-      // Substituir a URL da imagem com problema por uma imagem de fallback
       const updated = [...current];
       if (updated[index]) {
         updated[index] = {
           ...updated[index],
-          image: "/placeholder.svg" // Imagem de placeholder
+          image: "/placeholder.svg"
         };
       }
       return updated;
