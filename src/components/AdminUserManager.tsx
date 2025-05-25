@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthProvider';
@@ -41,6 +40,12 @@ interface AdminUser {
   created_at: string;
 }
 
+interface UserData {
+  id: string;
+  email: string;
+  last_sign_in_at?: string;
+}
+
 interface NewAdminFormData {
   email: string;
   password: string;
@@ -77,15 +82,15 @@ const AdminUserManager: React.FC = () => {
       
       if (profilesError) throw profilesError;
       
-      // Get user emails using the function
+      // Get user emails using the function with proper typing
       const { data: usersData, error: usersError } = await supabase
-        .rpc('get_all_users');
+        .rpc('get_all_users') as { data: UserData[] | null, error: any };
       
       if (usersError) throw usersError;
       
       // Map the data correctly
       const formattedAdmins: AdminUser[] = adminProfiles?.map(profile => {
-        const userData = usersData?.find((user: any) => user.id === profile.id);
+        const userData = usersData?.find(user => user.id === profile.id);
         return {
           id: profile.id,
           email: userData?.email || 'Email não encontrado',
