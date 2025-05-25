@@ -56,7 +56,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
       const { data, error } = await supabase
         .from('comments')
         .select('*')
-        .eq('gallery_item_id', item.id)
+        .eq('gallery_item_id', String(item.id))
         .eq('is_approved', true)
         .order('created_at', { ascending: false });
       
@@ -81,14 +81,12 @@ const ImageModal: React.FC<ImageModalProps> = ({
 
     setSubmittingComment(true);
     try {
-      const { error } = await supabase.from('comments').insert([
-        {
-          gallery_item_id: item.id,
-          author_name: newComment.author.trim(),
-          content: newComment.content.trim(),
-          is_approved: false,
-        },
-      ]);
+      const { error } = await supabase.from('comments').insert({
+        gallery_item_id: String(item.id),
+        author_name: newComment.author.trim(),
+        content: newComment.content.trim(),
+        is_approved: false,
+      });
       
       if (error) throw error;
       

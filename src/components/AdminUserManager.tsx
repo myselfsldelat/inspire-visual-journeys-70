@@ -70,25 +70,29 @@ const AdminUserManager: React.FC = () => {
 
   const fetchAdmins = async () => {
     try {
-      const { data, error } = await supabase
+      // First get admin profiles
+      const { data: adminProfiles, error: profilesError } = await supabase
         .from('admin_profiles')
-        .select(`
-          id,
-          role,
-          auth_users:id (
-            email,
-            created_at
-          )
-        `);
+        .select('id, role, created_at');
       
-      if (error) throw error;
+      if (profilesError) throw profilesError;
       
-      const formattedAdmins = data?.map(admin => ({
-        id: admin.id,
-        email: admin.auth_users?.email || 'Email não encontrado',
-        role: admin.role,
-        created_at: admin.auth_users?.created_at || new Date().toISOString(),
-      })) || [];
+      // Get user emails using the function
+      const { data: usersData, error: usersError } = await supabase
+        .rpc('get_all_users');
+      
+      if (usersError) throw usersError;
+      
+      // Map the data correctly
+      const formattedAdmins: AdminUser[] = adminProfiles?.map(profile => {
+        const userData = usersData?.find((user: any) => user.id === profile.id);
+        return {
+          id: profile.id,
+          email: userData?.email || 'Email não encontrado',
+          role: profile.role as 'admin' | 'super_admin',
+          created_at: profile.created_at || new Date().toISOString(),
+        };
+      }) || [];
       
       setAdmins(formattedAdmins);
     } catch (error: any) {

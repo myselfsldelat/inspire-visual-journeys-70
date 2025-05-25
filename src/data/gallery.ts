@@ -8,6 +8,9 @@ export interface GalleryItem {
   title: string;
   description: string;
   motivation: string;
+  personal_message?: string; // Added personal message support
+  media_type?: 'image' | 'video'; // Added media type support
+  is_external_link?: boolean; // Added external link flag
   date?: string;
   location?: string;
   created_at?: string;
