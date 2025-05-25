@@ -117,14 +117,25 @@ const AdminLogin: React.FC = () => {
           </Button>
         </form>
         
-        <div className="px-6 pb-6 text-center">
-          <Button 
-            variant="outline"
-            className="text-sm"
-            onClick={() => navigate('/')}
-          >
-            Voltar para o site
-          </Button>
+        <div className="px-6 pb-6 space-y-3">
+          <div className="text-center">
+            <Button 
+              variant="outline"
+              className="text-sm"
+              onClick={() => navigate('/')}
+            >
+              Voltar para o site
+            </Button>
+          </div>
+          
+          <div className="text-center border-t pt-4">
+            <p className="text-xs text-gray-500 mb-2">
+              Precisa de acesso administrativo?
+            </p>
+            <p className="text-xs text-gray-600">
+              Entre em contato com um Super Administrador para criar sua conta.
+            </p>
+          </div>
         </div>
       </div>
     </div>
