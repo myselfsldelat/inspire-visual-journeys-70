@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseCustom } from '@/integrations/supabase/client-custom';
 import { GalleryItem as GalleryItemType } from '@/data/gallery';
 import { useToast } from '@/hooks/use-toast';
 
@@ -53,7 +53,7 @@ const useGalleryItems = ({
       console.log('Attempting to fetch gallery items from Supabase...');
 
       // Try to get items from Supabase first
-      const { data, error, count } = await supabase
+      const { data, error, count } = await (supabaseCustom as any)
         .from('gallery_items')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })

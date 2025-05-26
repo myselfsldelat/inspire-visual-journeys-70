@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseCustom } from '@/integrations/supabase/client-custom';
 import { GalleryItem as GalleryItemType } from '@/data/gallery';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
     
     setLoadingComments(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabaseCustom as any)
         .from('comments')
         .select('*')
         .eq('gallery_item_id', String(item.id))
@@ -81,7 +81,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
 
     setSubmittingComment(true);
     try {
-      const { error } = await supabase.from('comments').insert({
+      const { error } = await (supabaseCustom as any).from('comments').insert({
         gallery_item_id: String(item.id),
         author_name: newComment.author.trim(),
         content: newComment.content.trim(),

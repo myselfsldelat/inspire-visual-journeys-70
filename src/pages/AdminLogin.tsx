@@ -1,184 +1,153 @@
 
-import React, { useState, useEffect } from 'react';
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "@/hooks/use-toast";
-import { Bike, Lock, Eye, EyeOff } from 'lucide-react';
+import { supabaseCustom } from '@/integrations/supabase/client-custom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Shield } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const AdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        navigate('/admin');
-      }
-    };
-    
-    checkSession();
-  }, [navigate]);
+  const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     
+    if (!email || !password) {
+      setError('Por favor, preencha todos os campos.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Authenticate user
+      const { data: authData, error: authError } = await supabaseCustom.auth.signInWithPassword({
         email,
-        password
+        password,
       });
-      
-      if (error) throw error;
-      
-      if (data.user) {
-        // Check if user is an admin
-        const { data: adminData, error: adminError } = await supabase
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // Check if user is admin
+        const { data: adminData, error: adminError } = await (supabaseCustom as any)
           .from('admin_profiles')
-          .select('*')
-          .eq('id', data.user.id)
+          .select('role')
+          .eq('id', authData.user.id)
           .single();
-        
-        if (adminError || !adminData) {
-          await supabase.auth.signOut();
+
+        if (adminError) {
+          console.error('Error checking admin status:', adminError);
+          throw new Error('Acesso negado. Este usuário não tem permissões administrativas.');
+        }
+
+        if (adminData) {
           toast({
-            title: "Acesso negado",
-            description: "Você não tem permissão para acessar o painel de administração.",
-            variant: "destructive"
+            title: 'Login realizado com sucesso!',
+            description: `Bem-vindo, ${adminData.role === 'super_admin' ? 'Super Admin' : 'Admin'}!`,
           });
-        } else {
-          toast({
-            title: "Login bem-sucedido",
-            description: "Bem-vindo ao painel de administração."
-          });
+          
           navigate('/admin');
+        } else {
+          throw new Error('Acesso negado. Este usuário não tem permissões administrativas.');
         }
       }
     } catch (error: any) {
-      toast({
-        title: "Erro ao fazer login",
-        description: error.message || "Verifique suas credenciais e tente novamente.",
-        variant: "destructive"
-      });
+      console.error('Login error:', error);
+      setError(error.message || 'Erro ao fazer login. Verifique suas credenciais.');
+      
+      // Sign out if there was an error after authentication
+      await supabaseCustom.auth.signOut();
     } finally {
       setLoading(false);
     }
   };
 
-  const fillDefaultCredentials = () => {
-    setEmail('admin@bikenight.com');
-    setPassword('adminbikenight');
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-xl overflow-hidden">
-        <div className="bg-event-dark p-6 text-center">
-          <div className="flex justify-center mb-4">
-            <Bike className="h-12 w-12 text-event-orange" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-event-dark via-gray-800 to-event-blue p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-center mb-4">
+            <div className="bg-event-orange p-3 rounded-full">
+              <Shield className="h-8 w-8 text-white" />
+            </div>
           </div>
-          <h2 className="text-2xl font-bold text-white">Admin Dashboard</h2>
-          <p className="text-gray-300 mt-1">BIKE NIGHT AMAZONAS</p>
-        </div>
+          <CardTitle className="text-2xl text-center">Acesso Administrativo</CardTitle>
+          <CardDescription className="text-center">
+            Entre com suas credenciais de administrador
+          </CardDescription>
+        </CardHeader>
         
-        <form onSubmit={handleLogin} className="p-6 space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email"
-              type="email" 
-              placeholder="seuemail@exemplo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <div className="relative">
-              <Input 
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="admin@bikenightamazonas.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
                 id="password"
-                type={showPassword ? "text" : "password"}
+                type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
                 required
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4 text-gray-400" />
-                ) : (
-                  <Eye className="h-4 w-4 text-gray-400" />
-                )}
-              </Button>
             </div>
-          </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full bg-event-orange hover:bg-orange-600"
-            disabled={loading}
-          >
-            {loading ? "Entrando..." : <><Lock className="mr-2 h-4 w-4" /> Entrar</>}
-          </Button>
-        </form>
-        
-        <div className="px-6 pb-6 space-y-3">
-          {/* Credenciais padrão */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-blue-800 mb-2">Credenciais Padrão</h3>
-            <div className="space-y-1 text-xs text-blue-700">
-              <p><strong>Email:</strong> admin@bikenight.com</p>
-              <p><strong>Senha:</strong> adminbikenight</p>
-            </div>
+            
             <Button 
-              variant="outline"
-              size="sm"
-              className="mt-2 text-xs"
-              onClick={fillDefaultCredentials}
+              type="submit" 
+              className="w-full bg-event-orange hover:bg-orange-600" 
+              disabled={loading}
             >
-              Usar credenciais padrão
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Entrando...
+                </>
+              ) : (
+                'Entrar'
+              )}
             </Button>
-          </div>
+          </form>
           
-          <div className="text-center">
-            <Button 
-              variant="outline"
-              className="text-sm"
-              onClick={() => navigate('/')}
-            >
-              Voltar para o site
-            </Button>
-          </div>
-          
-          <div className="text-center border-t pt-4">
-            <p className="text-xs text-gray-500 mb-2">
-              Precisa de acesso administrativo?
-            </p>
-            <p className="text-xs text-gray-600">
-              Entre em contato com um Super Administrador para criar sua conta.
-            </p>
-            <p className="text-xs text-gray-500 mt-2">
-              Email: admin@bikenight.com | Senha: adminbikenight
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Problemas para acessar?{' '}
+              <a href="mailto:admin@bikenightamazonas.com" className="text-event-orange hover:underline">
+                Contate o suporte
+              </a>
             </p>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

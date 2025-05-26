@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseCustom } from '@/integrations/supabase/client-custom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -91,7 +91,7 @@ const MediaLinkUploader: React.FC = () => {
     setUploading(true);
     
     try {
-      const { error } = await supabase.from('gallery_items').insert([
+      const { error } = await (supabaseCustom as any).from('gallery_items').insert([
         {
           title: data.title,
           image: data.mediaUrl,

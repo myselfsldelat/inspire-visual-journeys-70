@@ -1,117 +1,121 @@
 
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { supabaseCustom, supabaseOperations } from '@/integrations/supabase/client-custom';
+import { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
-  session: Session | null;
   user: User | null;
+  loading: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
-  loading: boolean;
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  session: null,
-  user: null,
-  isAdmin: false,
-  isSuperAdmin: false,
-  loading: true,
-  signOut: async () => {},
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<Session | null>(null);
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+
+  const checkAdminStatus = async (userId: string) => {
+    try {
+      const { data, error } = await supabaseOperations.getAdminProfiles();
+      
+      if (error) {
+        console.error('Error checking admin status:', error);
+        return { isAdmin: false, isSuperAdmin: false };
+      }
+      
+      const adminProfile = data?.find((profile: any) => profile.id === userId);
+      
+      if (adminProfile) {
+        const isSuper = adminProfile.role === 'super_admin';
+        return {
+          isAdmin: true,
+          isSuperAdmin: isSuper
+        };
+      }
+      
+      return { isAdmin: false, isSuperAdmin: false };
+    } catch (error) {
+      console.error('Error in checkAdminStatus:', error);
+      return { isAdmin: false, isSuperAdmin: false };
+    }
+  };
 
   useEffect(() => {
-    // First set up the auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        
-        // Check admin status if user is logged in
-        if (currentSession?.user) {
-          setTimeout(() => {
-            checkAdminStatus(currentSession.user.id);
-          }, 0);
-        } else {
-          setIsAdmin(false);
-          setIsSuperAdmin(false);
-        }
-      }
-    );
-
-    // Then check for existing session
-    const initializeAuth = async () => {
+    // Get initial session
+    const getInitialSession = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
+        const { data: { session } } = await supabaseCustom.auth.getSession();
+        setUser(session?.user ?? null);
         
-        // Check admin status if user is logged in
-        if (data.session?.user) {
-          await checkAdminStatus(data.session.user.id);
+        if (session?.user) {
+          const { isAdmin: adminStatus, isSuperAdmin: superAdminStatus } = await checkAdminStatus(session.user.id);
+          setIsAdmin(adminStatus);
+          setIsSuperAdmin(superAdminStatus);
         }
       } catch (error) {
-        console.error('Error checking auth status:', error);
+        console.error('Error getting initial session:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    initializeAuth();
+    getInitialSession();
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    // Listen for auth changes
+    const { data: { subscription } } = supabaseCustom.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const { isAdmin: adminStatus, isSuperAdmin: superAdminStatus } = await checkAdminStatus(session.user.id);
+          setIsAdmin(adminStatus);
+          setIsSuperAdmin(superAdminStatus);
+        } else {
+          setIsAdmin(false);
+          setIsSuperAdmin(false);
+        }
+        
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const checkAdminStatus = async (userId: string) => {
+  const signOut = async () => {
     try {
-      const { data, error } = await supabase
-        .from('admin_profiles')
-        .select('role')
-        .eq('id', userId)
-        .single();
-      
-      if (error) {
-        setIsAdmin(false);
-        setIsSuperAdmin(false);
-        return;
-      }
-      
-      setIsAdmin(!!data);
-      setIsSuperAdmin(data?.role === 'super_admin');
-    } catch (error) {
-      console.error('Error checking admin status:', error);
+      await supabaseCustom.auth.signOut();
+      setUser(null);
       setIsAdmin(false);
       setIsSuperAdmin(false);
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setSession(null);
-    setUser(null);
-    setIsAdmin(false);
-    setIsSuperAdmin(false);
-  };
-
   const value = {
-    session,
     user,
+    loading,
     isAdmin,
     isSuperAdmin,
-    loading,
-    signOut
+    signOut,
   };
 
   return (
@@ -120,5 +124,3 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     </AuthContext.Provider>
   );
 };
-
-export default AuthProvider;

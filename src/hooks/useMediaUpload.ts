@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseCustom } from '@/integrations/supabase/client-custom';
 import { useToast } from '@/hooks/use-toast';
 
 interface MediaFile {
@@ -101,7 +101,7 @@ const useMediaUpload = () => {
           );
 
           // Insert into gallery_items table
-          const { error } = await supabase
+          const { error } = await (supabaseCustom as any)
             .from('gallery_items')
             .insert({
               title: `${metadata.title} - ${mediaFile.file.name}`,
