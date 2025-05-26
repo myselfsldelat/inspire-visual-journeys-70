@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseOperations } from '@/integrations/supabase/client-custom';
 import { useAuth } from './AuthProvider';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -60,18 +60,7 @@ const AdminCommentsView: React.FC = () => {
       try {
         let isPending = tab === 'pending';
         
-        let query = supabase
-          .from('comments' as any)
-          .select(`
-            *,
-            gallery_title:gallery_items(title),
-            gallery_image:gallery_items(image)
-          `, { count: 'exact' })
-          .eq('is_approved', !isPending)
-          .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
-          .order('created_at', { ascending: false });
-        
-        const { data, error, count } = await query;
+        const { data, error, count } = await supabaseOperations.getComments(!isPending, page, PAGE_SIZE);
         
         if (error) throw error;
         
@@ -104,10 +93,7 @@ const AdminCommentsView: React.FC = () => {
 
   const handleApproveComment = async (commentId: string) => {
     try {
-      const { error } = await supabase
-        .from('comments' as any)
-        .update({ is_approved: true })
-        .eq('id', commentId);
+      const { error } = await supabaseOperations.updateComment(commentId, { is_approved: true });
       
       if (error) throw error;
       
@@ -128,10 +114,7 @@ const AdminCommentsView: React.FC = () => {
 
   const handleRejectComment = async (commentId: string) => {
     try {
-      const { error } = await supabase
-        .from('comments' as any)
-        .delete()
-        .eq('id', commentId);
+      const { error } = await supabaseOperations.deleteComment(commentId);
       
       if (error) throw error;
       

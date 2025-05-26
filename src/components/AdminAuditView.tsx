@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseOperations } from '@/integrations/supabase/client-custom';
 import { useAuth } from './AuthProvider';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -55,25 +55,13 @@ const AdminAuditView: React.FC = () => {
   useEffect(() => {
     const fetchLogs = async () => {
       try {
-        let query = supabase
-          .from('audit_logs' as any)
-          .select('*', { count: 'exact' })
-          .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
-          .order('created_at', { ascending: false });
+        const filters = {
+          search,
+          actionFilter,
+          entityFilter
+        };
         
-        if (search) {
-          query = query.or(`entity_id.ilike.%${search}%,details.ilike.%${search}%`);
-        }
-        
-        if (actionFilter) {
-          query = query.eq('action', actionFilter);
-        }
-        
-        if (entityFilter) {
-          query = query.eq('entity', entityFilter);
-        }
-        
-        const { data, error, count } = await query;
+        const { data, error, count } = await supabaseOperations.getAuditLogs(page, PAGE_SIZE, filters);
         
         if (error) {
           throw error;
@@ -85,8 +73,7 @@ const AdminAuditView: React.FC = () => {
         
         // Get user emails using RPC function
         for (const userId of userIds) {
-          const { data: userData, error: userError } = await supabase
-            .rpc('get_user_by_id', { user_id: userId });
+          const { data: userData, error: userError } = await supabaseOperations.getUserById(userId);
           
           if (userError) {
             console.error('Error fetching user:', userError);

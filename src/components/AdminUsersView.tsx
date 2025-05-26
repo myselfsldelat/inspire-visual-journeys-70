@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseOperations } from '@/integrations/supabase/client-custom';
 import { useAuth } from './AuthProvider';
 import { Card } from '@/components/ui/card';
 import {
@@ -49,15 +49,12 @@ const AdminUsersView: React.FC = () => {
     const fetchUsers = async () => {
       try {
         // Get admin profiles first
-        const { data: adminData, error: adminError } = await supabase
-          .from('admin_profiles' as any)
-          .select('id, role');
+        const { data: adminData, error: adminError } = await supabaseOperations.getAdminProfiles();
         
         if (adminError) throw adminError;
         
         // Get users using a server function
-        const { data: usersData, error: usersError } = await supabase
-          .rpc('get_all_users');
+        const { data: usersData, error: usersError } = await supabaseOperations.getAllUsers();
         
         if (usersError) {
           console.error('Error fetching users:', usersError);
@@ -105,8 +102,7 @@ const AdminUsersView: React.FC = () => {
       }
       
       // Use RPC function to get user by email
-      const { data: userData, error: userError } = await supabase
-        .rpc('get_user_by_email', { user_email: emailInput });
+      const { data: userData, error: userError } = await supabaseOperations.getUserByEmail(emailInput);
       
       if (userError || !userData) {
         toast({
@@ -120,12 +116,10 @@ const AdminUsersView: React.FC = () => {
       const typedUserData = userData as { id: string; email: string };
       
       // Add admin profile
-      const { error: adminError } = await supabase
-        .from('admin_profiles' as any)
-        .insert({
-          id: typedUserData.id,
-          role: adminRole
-        });
+      const { error: adminError } = await supabaseOperations.insertAdminProfile({
+        id: typedUserData.id,
+        role: adminRole
+      });
       
       if (adminError) {
         // Check if it's a duplicate error
@@ -164,12 +158,9 @@ const AdminUsersView: React.FC = () => {
     if (!selectedUser) return;
     
     try {
-      const { error } = await supabase
-        .from('admin_profiles' as any)
-        .update({
-          role: adminRole
-        })
-        .eq('id', selectedUser.id);
+      const { error } = await supabaseOperations.updateAdminProfile(selectedUser.id, {
+        role: adminRole
+      });
       
       if (error) throw error;
       
@@ -197,10 +188,7 @@ const AdminUsersView: React.FC = () => {
     
     if (confirmed) {
       try {
-        const { error } = await supabase
-          .from('admin_profiles' as any)
-          .delete()
-          .eq('id', userId);
+        const { error } = await supabaseOperations.deleteAdminProfile(userId);
         
         if (error) throw error;
         

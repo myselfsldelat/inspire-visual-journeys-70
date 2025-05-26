@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseCustom, supabaseOperations } from '@/integrations/supabase/client-custom';
 import { useAuth } from './AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,15 +72,12 @@ const AdminUserManager: React.FC = () => {
   const fetchAdmins = async () => {
     try {
       // First get admin profiles
-      const { data: adminProfiles, error: profilesError } = await supabase
-        .from('admin_profiles' as any)
-        .select('id, role, created_at');
+      const { data: adminProfiles, error: profilesError } = await supabaseOperations.getAdminProfiles();
       
       if (profilesError) throw profilesError;
       
       // Get user emails using the function with proper typing
-      const { data: usersData, error: usersError } = await supabase
-        .rpc('get_all_users') as { data: UserData[] | null, error: any };
+      const { data: usersData, error: usersError } = await supabaseOperations.getAllUsers() as { data: UserData[] | null, error: any };
       
       if (usersError) throw usersError;
       
@@ -113,7 +110,7 @@ const AdminUserManager: React.FC = () => {
     
     try {
       // Criar usuário no Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabaseCustom.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -125,14 +122,10 @@ const AdminUserManager: React.FC = () => {
       
       if (authData.user) {
         // Adicionar perfil de admin
-        const { error: profileError } = await supabase
-          .from('admin_profiles' as any)
-          .insert([
-            {
-              id: authData.user.id,
-              role: data.role,
-            }
-          ]);
+        const { error: profileError } = await supabaseOperations.insertAdminProfile({
+          id: authData.user.id,
+          role: data.role,
+        });
         
         if (profileError) throw profileError;
         
@@ -161,10 +154,7 @@ const AdminUserManager: React.FC = () => {
     if (!confirm('Tem certeza que deseja remover este administrador?')) return;
     
     try {
-      const { error } = await supabase
-        .from('admin_profiles' as any)
-        .delete()
-        .eq('id', adminId);
+      const { error } = await supabaseOperations.deleteAdminProfile(adminId);
       
       if (error) throw error;
       

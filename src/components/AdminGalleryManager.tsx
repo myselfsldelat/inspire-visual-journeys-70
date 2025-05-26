@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseOperations } from '@/integrations/supabase/client-custom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -78,10 +77,7 @@ const AdminGalleryManager: React.FC = () => {
     setError(null);
     
     try {
-      const { data, error } = await supabase
-        .from('gallery_items' as any)
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabaseOperations.getGalleryItems();
       
       if (error) throw error;
       
@@ -118,16 +114,13 @@ const AdminGalleryManager: React.FC = () => {
     if (!selectedItem) return;
     
     try {
-      const { error } = await supabase
-        .from('gallery_items' as any)
-        .update({
-          title: data.title,
-          image: data.image,
-          description: data.description,
-          motivation: data.motivation,
-          personal_message: data.personal_message,
-        })
-        .eq('id', String(selectedItem.id));
+      const { error } = await supabaseOperations.updateGalleryItem(String(selectedItem.id), {
+        title: data.title,
+        image: data.image,
+        description: data.description,
+        motivation: data.motivation,
+        personal_message: data.personal_message,
+      });
       
       if (error) throw error;
       
@@ -152,10 +145,7 @@ const AdminGalleryManager: React.FC = () => {
     if (!selectedItem) return;
     
     try {
-      const { error } = await supabase
-        .from('gallery_items' as any)
-        .delete()
-        .eq('id', String(selectedItem.id));
+      const { error } = await supabaseOperations.deleteGalleryItem(String(selectedItem.id));
       
       if (error) throw error;
       

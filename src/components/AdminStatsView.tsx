@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseOperations } from '@/integrations/supabase/client-custom';
 import { useAuth } from './AuthProvider';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,11 +18,7 @@ const AdminStatsView: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const { data, error } = await supabase
-          .from('system_stats' as any)
-          .select('*')
-          .order('stat_date', { ascending: false })
-          .limit(10);
+        const { data, error } = await supabaseOperations.getSystemStats();
         
         if (error) {
           throw error;
