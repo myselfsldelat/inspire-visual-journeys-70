@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthProvider';
@@ -32,28 +33,14 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, Search } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import AccessDenied from './AccessDenied';
-import { Json } from '@/integrations/supabase/types';
+import { AuditLog, UserData } from '@/integrations/supabase/custom-types';
 
-interface AuditLog {
-  id: string;
-  user_id: string;
-  action: string;
-  entity: string;
-  entity_id?: string;
-  details: any;
-  ip_address?: string;
-  created_at: string;
+interface AuditLogWithEmail extends AuditLog {
   user_email?: string;
 }
 
-interface UserData {
-  id: string;
-  email: string;
-  last_sign_in_at?: string;
-}
-
 const AdminAuditView: React.FC = () => {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [logs, setLogs] = useState<AuditLogWithEmail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -69,7 +56,7 @@ const AdminAuditView: React.FC = () => {
     const fetchLogs = async () => {
       try {
         let query = supabase
-          .from('audit_logs')
+          .from('audit_logs' as any)
           .select('*', { count: 'exact' })
           .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
           .order('created_at', { ascending: false });
@@ -93,7 +80,7 @@ const AdminAuditView: React.FC = () => {
         }
         
         // Get user emails for each audit log
-        const userIds = Array.from(new Set(data?.map(log => log.user_id) || []));
+        const userIds = Array.from(new Set(data?.map((log: AuditLog) => log.user_id) || []));
         const userEmails: Record<string, string> = {};
         
         // Get user emails using RPC function
@@ -106,20 +93,18 @@ const AdminAuditView: React.FC = () => {
             continue;
           }
           
-          // Fix: Properly handle the JSON data from the RPC function
           if (userData) {
-            // Cast to any first to access the JSON properties safely
             const jsonData = userData as any;
             if (jsonData.email) {
               userEmails[userId] = jsonData.email;
             } else {
-              userEmails[userId] = userId; // Fallback to user ID if email not available
+              userEmails[userId] = userId;
             }
           }
         }
         
         // Merge the user emails into the audit logs
-        const formattedData = data?.map(log => ({
+        const formattedData: AuditLogWithEmail[] = data?.map((log: AuditLog) => ({
           ...log,
           user_email: userEmails[log.user_id] || log.user_id
         })) || [];
@@ -143,7 +128,7 @@ const AdminAuditView: React.FC = () => {
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setPage(1); // Reset to first page on new search
+    setPage(1);
   };
 
   const handleClearFilters = () => {
@@ -297,7 +282,6 @@ const AdminAuditView: React.FC = () => {
                 </PaginationItem>
                 
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  // Show max 5 page buttons, centered around current page
                   let pageNum = page;
                   if (page <= 3) {
                     pageNum = i + 1;

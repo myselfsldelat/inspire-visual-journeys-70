@@ -1,6 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { GalleryItem } from '@/data/gallery';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,6 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import MediaUploadManager from './MediaUploadManager';
 import MediaLinkUploader from './MediaLinkUploader';
 import AdminUserManager from './AdminUserManager';
+import { GalleryItem } from '@/integrations/supabase/custom-types';
 
 interface GalleryItemFormData {
   title: string;
@@ -78,7 +79,7 @@ const AdminGalleryManager: React.FC = () => {
     
     try {
       const { data, error } = await supabase
-        .from('gallery_items')
+        .from('gallery_items' as any)
         .select('*')
         .order('created_at', { ascending: false });
       
@@ -118,7 +119,7 @@ const AdminGalleryManager: React.FC = () => {
     
     try {
       const { error } = await supabase
-        .from('gallery_items')
+        .from('gallery_items' as any)
         .update({
           title: data.title,
           image: data.image,
@@ -152,7 +153,7 @@ const AdminGalleryManager: React.FC = () => {
     
     try {
       const { error } = await supabase
-        .from('gallery_items')
+        .from('gallery_items' as any)
         .delete()
         .eq('id', String(selectedItem.id));
       
@@ -175,7 +176,7 @@ const AdminGalleryManager: React.FC = () => {
     }
   };
 
-  const renderMediaPreview = (item: any) => {
+  const renderMediaPreview = (item: GalleryItem) => {
     const isVideo = item.media_type === 'video' || 
                    item.image.includes('.mp4') || 
                    item.image.includes('video');

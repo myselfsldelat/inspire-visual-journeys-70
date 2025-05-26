@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthProvider';
@@ -22,7 +23,6 @@ import {
 } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { AlertCircle, MessageSquare, Check, X, Trash } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from '@/hooks/use-toast';
@@ -35,26 +35,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Comment } from '@/integrations/supabase/custom-types';
 
-interface Comment {
-  id: string;
-  author_name: string;
-  gallery_item_id: string;
-  content: string;
-  is_approved: boolean;
-  created_at: string;
+interface CommentWithGallery extends Comment {
   gallery_title?: string;
   gallery_image?: string;
 }
 
 const AdminCommentsView: React.FC = () => {
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<CommentWithGallery[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState('pending');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
+  const [selectedComment, setSelectedComment] = useState<CommentWithGallery | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const { isAdmin } = useAuth();
   
@@ -63,11 +58,10 @@ const AdminCommentsView: React.FC = () => {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        // Build the query
         let isPending = tab === 'pending';
         
         let query = supabase
-          .from('comments')
+          .from('comments' as any)
           .select(`
             *,
             gallery_title:gallery_items(title),
@@ -82,12 +76,12 @@ const AdminCommentsView: React.FC = () => {
         if (error) throw error;
         
         // Format the results
-        const formattedComments = data?.map(comment => {
+        const formattedComments: CommentWithGallery[] = data?.map((comment: any) => {
           const { gallery_title, gallery_image, ...rest } = comment;
           return {
             ...rest,
-            gallery_title: typeof gallery_title === 'object' ? gallery_title.title : null,
-            gallery_image: typeof gallery_image === 'object' ? gallery_image.image : null
+            gallery_title: typeof gallery_title === 'object' ? gallery_title?.title : null,
+            gallery_image: typeof gallery_image === 'object' ? gallery_image?.image : null
           };
         }) || [];
         
@@ -111,7 +105,7 @@ const AdminCommentsView: React.FC = () => {
   const handleApproveComment = async (commentId: string) => {
     try {
       const { error } = await supabase
-        .from('comments')
+        .from('comments' as any)
         .update({ is_approved: true })
         .eq('id', commentId);
       
@@ -122,7 +116,6 @@ const AdminCommentsView: React.FC = () => {
         description: 'O comentário foi aprovado e está disponível para visualização'
       });
       
-      // Update local state
       setComments(comments.filter(c => c.id !== commentId));
     } catch (error: any) {
       toast({
@@ -136,7 +129,7 @@ const AdminCommentsView: React.FC = () => {
   const handleRejectComment = async (commentId: string) => {
     try {
       const { error } = await supabase
-        .from('comments')
+        .from('comments' as any)
         .delete()
         .eq('id', commentId);
       
@@ -147,7 +140,6 @@ const AdminCommentsView: React.FC = () => {
         description: 'O comentário foi excluído com sucesso'
       });
       
-      // Update local state
       setComments(comments.filter(c => c.id !== commentId));
     } catch (error: any) {
       toast({
@@ -158,7 +150,7 @@ const AdminCommentsView: React.FC = () => {
     }
   };
 
-  const openViewDialog = (comment: Comment) => {
+  const openViewDialog = (comment: CommentWithGallery) => {
     setSelectedComment(comment);
     setIsViewDialogOpen(true);
   };

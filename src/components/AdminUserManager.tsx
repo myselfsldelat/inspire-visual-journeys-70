@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthProvider';
@@ -32,18 +33,13 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { UserPlus, Users, Shield, Trash2, Crown } from 'lucide-react';
+import { AdminProfile, UserData } from '@/integrations/supabase/custom-types';
 
 interface AdminUser {
   id: string;
   email: string;
   role: 'admin' | 'super_admin';
   created_at: string;
-}
-
-interface UserData {
-  id: string;
-  email: string;
-  last_sign_in_at?: string;
 }
 
 interface NewAdminFormData {
@@ -77,7 +73,7 @@ const AdminUserManager: React.FC = () => {
     try {
       // First get admin profiles
       const { data: adminProfiles, error: profilesError } = await supabase
-        .from('admin_profiles')
+        .from('admin_profiles' as any)
         .select('id, role, created_at');
       
       if (profilesError) throw profilesError;
@@ -89,7 +85,7 @@ const AdminUserManager: React.FC = () => {
       if (usersError) throw usersError;
       
       // Map the data correctly
-      const formattedAdmins: AdminUser[] = adminProfiles?.map(profile => {
+      const formattedAdmins: AdminUser[] = adminProfiles?.map((profile: AdminProfile) => {
         const userData = usersData?.find(user => user.id === profile.id);
         return {
           id: profile.id,
@@ -130,7 +126,7 @@ const AdminUserManager: React.FC = () => {
       if (authData.user) {
         // Adicionar perfil de admin
         const { error: profileError } = await supabase
-          .from('admin_profiles')
+          .from('admin_profiles' as any)
           .insert([
             {
               id: authData.user.id,
@@ -166,7 +162,7 @@ const AdminUserManager: React.FC = () => {
     
     try {
       const { error } = await supabase
-        .from('admin_profiles')
+        .from('admin_profiles' as any)
         .delete()
         .eq('id', adminId);
       

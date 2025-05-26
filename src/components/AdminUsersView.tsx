@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthProvider';
@@ -26,11 +27,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AccessDenied from './AccessDenied';
+import { UserData, AdminProfile } from '@/integrations/supabase/custom-types';
 
-interface UserProfile {
-  id: string;
-  email: string;
-  last_sign_in_at?: string;
+interface UserProfile extends UserData {
   is_admin: boolean;
   role: string | null;
 }
@@ -51,7 +50,7 @@ const AdminUsersView: React.FC = () => {
       try {
         // Get admin profiles first
         const { data: adminData, error: adminError } = await supabase
-          .from('admin_profiles')
+          .from('admin_profiles' as any)
           .select('id, role');
         
         if (adminError) throw adminError;
@@ -70,8 +69,8 @@ const AdminUsersView: React.FC = () => {
         }
         
         // Merge the data
-        const mergedData = (usersData as any[]).map((user: any) => {
-          const adminProfile = adminData?.find(admin => admin.id === user.id);
+        const mergedData: UserProfile[] = (usersData as UserData[]).map((user: UserData) => {
+          const adminProfile = adminData?.find((admin: AdminProfile) => admin.id === user.id);
           return {
             ...user,
             is_admin: !!adminProfile,
@@ -122,7 +121,7 @@ const AdminUsersView: React.FC = () => {
       
       // Add admin profile
       const { error: adminError } = await supabase
-        .from('admin_profiles')
+        .from('admin_profiles' as any)
         .insert({
           id: typedUserData.id,
           role: adminRole
@@ -166,7 +165,7 @@ const AdminUsersView: React.FC = () => {
     
     try {
       const { error } = await supabase
-        .from('admin_profiles')
+        .from('admin_profiles' as any)
         .update({
           role: adminRole
         })
@@ -199,7 +198,7 @@ const AdminUsersView: React.FC = () => {
     if (confirmed) {
       try {
         const { error } = await supabase
-          .from('admin_profiles')
+          .from('admin_profiles' as any)
           .delete()
           .eq('id', userId);
         

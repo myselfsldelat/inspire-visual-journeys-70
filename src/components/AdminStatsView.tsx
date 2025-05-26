@@ -7,14 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CalendarIcon, AlertCircle } from 'lucide-react';
 import AccessDenied from './AccessDenied';
-
-interface SystemStats {
-  id: string;
-  stat_date: string;
-  visits: number;
-  signups: number;
-  content_created: number;
-}
+import { SystemStats } from '@/integrations/supabase/custom-types';
 
 const AdminStatsView: React.FC = () => {
   const [stats, setStats] = useState<SystemStats[]>([]);
@@ -26,7 +19,7 @@ const AdminStatsView: React.FC = () => {
     const fetchStats = async () => {
       try {
         const { data, error } = await supabase
-          .from('system_stats')
+          .from('system_stats' as any)
           .select('*')
           .order('stat_date', { ascending: false })
           .limit(10);
