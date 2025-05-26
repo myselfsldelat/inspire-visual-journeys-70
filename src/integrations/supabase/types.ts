@@ -9,173 +9,16 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      admin_profiles: {
-        Row: {
-          created_at: string
-          id: string
-          role: string
-        }
-        Insert: {
-          created_at?: string
-          id: string
-          role: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: string
-        }
-        Relationships: []
-      }
-      audit_logs: {
-        Row: {
-          action: string
-          created_at: string
-          details: Json | null
-          entity: string
-          entity_id: string | null
-          id: string
-          ip_address: string | null
-          user_id: string
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          details?: Json | null
-          entity: string
-          entity_id?: string | null
-          id?: string
-          ip_address?: string | null
-          user_id: string
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          details?: Json | null
-          entity?: string
-          entity_id?: string | null
-          id?: string
-          ip_address?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      comments: {
-        Row: {
-          author_name: string
-          content: string
-          created_at: string
-          gallery_item_id: string
-          id: string
-          is_approved: boolean | null
-          user_id: string | null
-        }
-        Insert: {
-          author_name: string
-          content: string
-          created_at?: string
-          gallery_item_id: string
-          id?: string
-          is_approved?: boolean | null
-          user_id?: string | null
-        }
-        Update: {
-          author_name?: string
-          content?: string
-          created_at?: string
-          gallery_item_id?: string
-          id?: string
-          is_approved?: boolean | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "comments_gallery_item_id_fkey"
-            columns: ["gallery_item_id"]
-            isOneToOne: false
-            referencedRelation: "gallery_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      gallery_items: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          image: string
-          motivation: string | null
-          title: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          image: string
-          motivation?: string | null
-          title: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          image?: string
-          motivation?: string | null
-          title?: string
-        }
-        Relationships: []
-      }
-      system_stats: {
-        Row: {
-          content_created: number | null
-          id: string
-          last_updated: string
-          signups: number | null
-          stat_date: string
-          visits: number | null
-        }
-        Insert: {
-          content_created?: number | null
-          id?: string
-          last_updated?: string
-          signups?: number | null
-          stat_date?: string
-          visits?: number | null
-        }
-        Update: {
-          content_created?: number | null
-          id?: string
-          last_updated?: string
-          signups?: number | null
-          stat_date?: string
-          visits?: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_all_users: {
-        Args: Record<PropertyKey, never>
-        Returns: Json[]
-      }
-      get_user_by_email: {
-        Args: { user_email: string }
-        Returns: Json
-      }
-      get_user_by_id: {
-        Args: { user_id: string }
-        Returns: Json
-      }
-      is_super_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      admin_role: "super_admin" | "content_admin"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -290,8 +133,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      admin_role: ["super_admin", "content_admin"],
-    },
+    Enums: {},
   },
 } as const
