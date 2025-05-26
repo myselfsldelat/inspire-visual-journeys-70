@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Bike, Lock } from 'lucide-react';
+import { Bike, Lock, Eye, EyeOff } from 'lucide-react';
 
 const AdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   // Check if user is already logged in
@@ -72,6 +73,11 @@ const AdminLogin: React.FC = () => {
     }
   };
 
+  const fillDefaultCredentials = () => {
+    setEmail('admin@bikenight.com');
+    setPassword('adminbikenight');
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-xl overflow-hidden">
@@ -98,14 +104,29 @@ const AdminLogin: React.FC = () => {
           
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
-            <Input 
-              id="password"
-              type="password" 
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input 
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <Eye className="h-4 w-4 text-gray-400" />
+                )}
+              </Button>
+            </div>
           </div>
           
           <Button 
@@ -118,6 +139,23 @@ const AdminLogin: React.FC = () => {
         </form>
         
         <div className="px-6 pb-6 space-y-3">
+          {/* Credenciais padrão */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-blue-800 mb-2">Credenciais Padrão</h3>
+            <div className="space-y-1 text-xs text-blue-700">
+              <p><strong>Email:</strong> admin@bikenight.com</p>
+              <p><strong>Senha:</strong> adminbikenight</p>
+            </div>
+            <Button 
+              variant="outline"
+              size="sm"
+              className="mt-2 text-xs"
+              onClick={fillDefaultCredentials}
+            >
+              Usar credenciais padrão
+            </Button>
+          </div>
+          
           <div className="text-center">
             <Button 
               variant="outline"
@@ -134,6 +172,9 @@ const AdminLogin: React.FC = () => {
             </p>
             <p className="text-xs text-gray-600">
               Entre em contato com um Super Administrador para criar sua conta.
+            </p>
+            <p className="text-xs text-gray-500 mt-2">
+              Email: admin@bikenight.com | Senha: adminbikenight
             </p>
           </div>
         </div>
