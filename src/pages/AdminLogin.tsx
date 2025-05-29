@@ -1,13 +1,13 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabaseCustom } from '@/integrations/supabase/client-custom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield } from 'lucide-react';
+import { Loader2, Shield, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const AdminLogin: React.FC = () => {
@@ -138,13 +138,25 @@ const AdminLogin: React.FC = () => {
             </Button>
           </form>
           
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Problemas para acessar?{' '}
-              <a href="mailto:admin@bikenightamazonas.com" className="text-event-orange hover:underline">
-                Contate o suporte
-              </a>
-            </p>
+          <div className="mt-6 space-y-4">
+            <div className="text-center">
+              <Link 
+                to="/admin-setup" 
+                className="inline-flex items-center text-sm text-event-orange hover:underline"
+              >
+                <Settings className="h-4 w-4 mr-1" />
+                Configuração inicial do sistema
+              </Link>
+            </div>
+            
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Problemas para acessar?{' '}
+                <a href="mailto:admin@bikenightamazonas.com" className="text-event-orange hover:underline">
+                  Contate o suporte
+                </a>
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

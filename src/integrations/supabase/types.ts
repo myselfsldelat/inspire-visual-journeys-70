@@ -9,13 +9,156 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      admin_profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          role: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: string
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          entity: string
+          entity_id: string | null
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          entity: string
+          entity_id?: string | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      comments: {
+        Row: {
+          author_name: string
+          content: string
+          created_at: string | null
+          gallery_item_id: string
+          id: string
+          is_approved: boolean | null
+        }
+        Insert: {
+          author_name: string
+          content: string
+          created_at?: string | null
+          gallery_item_id: string
+          id?: string
+          is_approved?: boolean | null
+        }
+        Update: {
+          author_name?: string
+          content?: string
+          created_at?: string | null
+          gallery_item_id?: string
+          id?: string
+          is_approved?: boolean | null
+        }
+        Relationships: []
+      }
+      gallery_items: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          image: string
+          is_external_link: boolean | null
+          media_type: string | null
+          motivation: string | null
+          personal_message: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image: string
+          is_external_link?: boolean | null
+          media_type?: string | null
+          motivation?: string | null
+          personal_message?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image?: string
+          is_external_link?: boolean | null
+          media_type?: string | null
+          motivation?: string | null
+          personal_message?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      system_stats: {
+        Row: {
+          content_created: number | null
+          created_at: string | null
+          id: string
+          signups: number | null
+          stat_date: string
+          visits: number | null
+        }
+        Insert: {
+          content_created?: number | null
+          created_at?: string | null
+          id?: string
+          signups?: number | null
+          stat_date: string
+          visits?: number | null
+        }
+        Update: {
+          content_created?: number | null
+          created_at?: string | null
+          id?: string
+          signups?: number | null
+          stat_date?: string
+          visits?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_first_super_admin: {
+        Args: { email_param: string; password_param: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
