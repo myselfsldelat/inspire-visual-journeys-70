@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = "https://hfjkmuonmttsjogmsxak.supabase.co";
@@ -121,6 +120,18 @@ export const supabaseOperations = {
     }
     
     return await query;
+  },
+
+  // Site Content operations
+  async getSiteContent() {
+    return await supabaseCustom
+      .from('site_content')
+      .select('*');
+  },
+  async updateSiteContent(updates: { key: string; content: string }[]) {
+    return await supabaseCustom
+      .from('site_content')
+      .upsert(updates, { onConflict: 'key' });
   },
 
   // RPC functions

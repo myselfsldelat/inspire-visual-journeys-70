@@ -3,7 +3,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import { Button } from '@/components/ui/button';
-import { LogOut, Image, MessageSquare, LineChart, Shield, Users } from 'lucide-react';
+import { LogOut, Image, MessageSquare, LineChart, Shield, Users, FileText } from 'lucide-react';
 
 const AdminHeader: React.FC = () => {
   const { signOut, isSuperAdmin } = useAuth();
@@ -37,6 +37,19 @@ const AdminHeader: React.FC = () => {
               >
                 <Image className="w-4 h-4 mr-1" />
                 <span>Galeria</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/admin/content"
+                className={({ isActive }) => 
+                  `px-3 py-2 rounded-md text-sm flex items-center ${
+                    isActive ? 'bg-event-orange text-white' : 'text-gray-700 hover:bg-gray-100'
+                  }`
+                }
+              >
+                <FileText className="w-4 h-4 mr-1" />
+                <span>Conteúdo</span>
               </NavLink>
             </li>
             <li>

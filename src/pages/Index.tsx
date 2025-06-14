@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import HeroSection from '@/components/HeroSection';
@@ -63,8 +62,8 @@ const Index: React.FC = () => {
       <div className="fixed top-4 right-4 z-50">
         <Link to="/admin-login">
           <Button
-            size="sm"
-            className="bg-event-orange hover:bg-orange-600 text-white shadow-lg"
+            size="default"
+            className="bg-event-orange hover:bg-orange-600 text-white shadow-lg transform transition-transform hover:scale-105"
           >
             <Shield className="h-4 w-4 mr-2" />
             Admin

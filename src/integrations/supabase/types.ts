@@ -123,6 +123,27 @@ export type Database = {
         }
         Relationships: []
       }
+      site_content: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          key: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          key: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       system_stats: {
         Row: {
           content_created: number | null
