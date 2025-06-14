@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bike } from 'lucide-react';
+import { Bike, Instagram, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
@@ -17,20 +17,18 @@ const Footer: React.FC = () => {
             <div>
               <h3 className="font-semibold text-lg mb-2">Contato</h3>
               <p className="text-gray-300">contato@pedalesuperacao.com</p>
-              <p className="text-gray-300">(11) 99999-9999</p>
+              <a href="https://wa.me/559285823105" target="_blank" rel="noopener noreferrer" className="text-gray-300 flex items-center hover:text-white transition-colors">
+                <Phone className="w-4 h-4 mr-2" />
+                +55 92 8582-3105
+              </a>
             </div>
             
             <div>
               <h3 className="font-semibold text-lg mb-2">Siga-nos</h3>
               <div className="flex space-x-4">
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <a href="https://www.instagram.com/bike_night_amazonas" target="_blank" rel="noopener noreferrer" className="text-gray-300 flex items-center hover:text-white transition-colors">
+                  <Instagram className="w-5 h-5 mr-2" />
                   Instagram
-                </a>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                  Facebook
-                </a>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                  YouTube
                 </a>
               </div>
             </div>
