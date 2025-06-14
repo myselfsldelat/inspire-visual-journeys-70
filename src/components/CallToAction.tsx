@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Route, Users, Heart } from 'lucide-react';
+import { Calendar, MapPin, Route, Users, Heart, Megaphone } from 'lucide-react';
 
 interface CallToActionProps {
   onDiscoverClick: () => void;
@@ -9,11 +9,21 @@ interface CallToActionProps {
 
 const CallToAction: React.FC<CallToActionProps> = ({ onDiscoverClick }) => {
   return (
-    <section className="py-20 bg-gradient-to-r from-event-blue/80 to-event-green/80 text-white">
+    <section className="py-20 bg-gradient-to-r from-event-blue to-event-green text-white">
       <div className="container px-4 text-center">
         <h2 className="text-3xl md:text-4xl font-bold mb-6">
           Por Que Pedalar Conosco?
         </h2>
+        
+        <div className="max-w-3xl mx-auto bg-white/20 p-4 rounded-lg mb-8 backdrop-blur-sm border border-white/30">
+          <h3 className="font-bold text-xl mb-2 flex items-center justify-center">
+            <Megaphone className="mr-2 h-5 w-5 animate-pulse" />
+            Aviso da Semana!
+          </h3>
+          <p className="text-white/90">
+            Toda sexta é dia de superação e boas energias sobre duas rodas. O asfalto nos chama para mais uma noite incrível. Prepare sua bike, não esqueça o capacete e traga sua melhor vibe! Nosso ponto de encontro continua na <strong>Praça da Saudade</strong>. Te esperamos lá!
+          </p>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-10">
           <div className="bg-white/10 p-6 rounded-lg backdrop-blur-sm">
@@ -68,11 +78,6 @@ const CallToAction: React.FC<CallToActionProps> = ({ onDiscoverClick }) => {
             </ul>
           </div>
         </div>
-        
-        <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto italic">
-          "Prepare sua bike, ajuste o farol e junte‑se ao Bike Night Amazonas para pedalar, 
-          sorrir e celebrar juntos a liberdade sobre duas rodas!"
-        </p>
         
         <Button 
           onClick={onDiscoverClick}
