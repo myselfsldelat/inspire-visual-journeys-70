@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabaseOperations } from '@/integrations/supabase/client-custom';
 import { useAuth } from './AuthProvider';
@@ -60,35 +59,38 @@ const AdminAuditView: React.FC = () => {
           actionFilter,
           entityFilter
         };
-        
+
         const { data, error, count } = await supabaseOperations.getAuditLogs(page, PAGE_SIZE, filters);
-        
+
         if (error) {
           throw error;
         }
-        
-        // Get user emails for each audit log
-        const userIds = [
+
+        // ----- PATCH 1: Make userIds explicitly string[] -----
+        const userIds: string[] = [
           ...new Set(
-            data?.map((log: AuditLog) => log.user_id).filter((id): id is string => !!id) || []
+            (data?.map((log: AuditLog) => log.user_id).filter((id): id is string => !!id) || [])
           ),
         ];
+
         const userEmails: Record<string, string> = {};
-        
-        // Get user emails using RPC function
+
+        // ----- PATCH 2: Make sure userId is always a string -----
         for (const userId of userIds) {
           try {
+            // userId is string due to the typing above
             const { data: userData, error: userError } = await supabaseOperations.getUserById(userId);
-            
+
             if (userError) {
               console.error('Error fetching user:', userError);
               userEmails[userId] = userId;
               continue;
             }
-            
-            if (userData && typeof userData === 'object' && userData !== null) {
-              const userInfo = userData as { email?: string };
-              if (userInfo.email) {
+
+            // Double-check type and extract email safely
+            if (userData && typeof userData === 'object' && userData !== null && 'email' in userData) {
+              const userInfo = userData as { email?: string | null };
+              if (typeof userInfo.email === 'string' && !!userInfo.email) {
                 userEmails[userId] = userInfo.email;
               } else {
                 userEmails[userId] = userId;
@@ -101,15 +103,15 @@ const AdminAuditView: React.FC = () => {
             userEmails[userId] = userId;
           }
         }
-        
-        // Merge the user emails into the audit logs
+
+        // ----- PATCH 3: userEmails typed string, and log.user_id is string | null, fallback to "Sistema" if falsy -----
         const formattedData: AuditLogWithEmail[] = data?.map((log: AuditLog) => ({
           ...log,
-          user_email: log.user_id ? (userEmails[log.user_id] || log.user_id) : 'Sistema'
+          user_email: log.user_id ? (userEmails[String(log.user_id)] || String(log.user_id)) : 'Sistema'
         })) || [];
-        
+
         setLogs(formattedData);
-        
+
         if (count !== null) {
           setTotalPages(Math.ceil(count / PAGE_SIZE));
         }
@@ -119,7 +121,7 @@ const AdminAuditView: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     if (isSuperAdmin) {
       fetchLogs();
     }
