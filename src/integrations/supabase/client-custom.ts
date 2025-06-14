@@ -1,15 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from './client';
 
-const SUPABASE_URL = "https://hfjkmuonmttsjogmsxak.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhmamttdW9ubXR0c2pvZ21zeGFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyMjI5OTgsImV4cCI6MjA2Mzc5ODk5OH0.thgO0hwb2XTupV67mwgQmxokH4ziUK2XQTeU1X38VvI";
-
-// Create a Supabase client without strict typing to avoid type errors
-export const supabaseCustom = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-  },
-});
+// Reutilizamos o cliente Supabase principal e fazemos um cast para 'any' 
+// para manter a flexibilidade nas nossas funções customizadas, 
+// garantindo que usamos uma única instância de conexão.
+const supabaseCustom = supabase as any;
 
 // Type-safe wrapper functions for common operations
 export const supabaseOperations = {
