@@ -66,19 +66,16 @@ const AdminAuditView: React.FC = () => {
           throw error;
         }
 
-        // ----- PATCH 1: Make userIds explicitly string[] -----
         const userIds: string[] = [
           ...new Set(
-            (data?.map((log: AuditLog) => log.user_id).filter((id): id is string => !!id) || [])
+            (data?.map((log: { user_id: string | null }) => log.user_id).filter((id): id is string => !!id) || [])
           ),
         ];
 
         const userEmails: Record<string, string> = {};
 
-        // ----- PATCH 2: Make sure userId is always a string -----
         for (const userId of userIds) {
           try {
-            // userId is string due to the typing above
             const { data: userData, error: userError } = await supabaseOperations.getUserById(userId);
 
             if (userError) {
@@ -87,7 +84,6 @@ const AdminAuditView: React.FC = () => {
               continue;
             }
 
-            // Double-check type and extract email safely
             if (userData && typeof userData === 'object' && userData !== null && 'email' in userData) {
               const userInfo = userData as { email?: string | null };
               if (typeof userInfo.email === 'string' && !!userInfo.email) {
@@ -104,7 +100,6 @@ const AdminAuditView: React.FC = () => {
           }
         }
 
-        // ----- PATCH 3: userEmails typed string, and log.user_id is string | null, fallback to "Sistema" if falsy -----
         const formattedData: AuditLogWithEmail[] = data?.map((log: AuditLog) => ({
           ...log,
           user_email: log.user_id ? (userEmails[String(log.user_id)] || String(log.user_id)) : 'Sistema'
