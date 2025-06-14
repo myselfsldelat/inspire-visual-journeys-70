@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabaseOperations } from '@/integrations/supabase/client-custom';
 import { useAuth } from './AuthProvider';
@@ -76,20 +77,28 @@ const AdminAuditView: React.FC = () => {
         
         // Get user emails using RPC function
         for (const userId of userIds) {
-          const { data: userData, error: userError } = await supabaseOperations.getUserById(userId);
-          
-          if (userError) {
-            console.error('Error fetching user:', userError);
-            continue;
-          }
-          
-          if (userData) {
-            const jsonData = userData as any;
-            if (jsonData.email) {
-              userEmails[userId] = jsonData.email;
+          try {
+            const { data: userData, error: userError } = await supabaseOperations.getUserById(userId);
+            
+            if (userError) {
+              console.error('Error fetching user:', userError);
+              userEmails[userId] = userId;
+              continue;
+            }
+            
+            if (userData && typeof userData === 'object' && userData !== null) {
+              const userInfo = userData as { email?: string };
+              if (userInfo.email) {
+                userEmails[userId] = userInfo.email;
+              } else {
+                userEmails[userId] = userId;
+              }
             } else {
               userEmails[userId] = userId;
             }
+          } catch (err) {
+            console.error('Error processing user:', err);
+            userEmails[userId] = userId;
           }
         }
         
