@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabaseOperations } from '@/integrations/supabase/client-custom';
 import { useAuth } from './AuthProvider';
@@ -68,7 +67,11 @@ const AdminAuditView: React.FC = () => {
         }
         
         // Get user emails for each audit log
-        const userIds = Array.from(new Set(data?.map((log: AuditLog) => log.user_id) || []));
+        const userIds = [
+          ...new Set(
+            data?.map((log: AuditLog) => log.user_id).filter((id): id is string => !!id) || []
+          ),
+        ];
         const userEmails: Record<string, string> = {};
         
         // Get user emails using RPC function
@@ -93,7 +96,7 @@ const AdminAuditView: React.FC = () => {
         // Merge the user emails into the audit logs
         const formattedData: AuditLogWithEmail[] = data?.map((log: AuditLog) => ({
           ...log,
-          user_email: userEmails[log.user_id] || log.user_id
+          user_email: log.user_id ? (userEmails[log.user_id] || log.user_id) : 'Sistema'
         })) || [];
         
         setLogs(formattedData);

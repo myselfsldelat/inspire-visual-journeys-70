@@ -3,7 +3,7 @@ import { supabase } from './client';
 // Reutilizamos o cliente Supabase principal e fazemos um cast para 'any' 
 // para manter a flexibilidade nas nossas funções customizadas, 
 // garantindo que usamos uma única instância de conexão.
-const supabaseCustom = supabase as any;
+export const supabaseCustom = supabase as any;
 
 // Type-safe wrapper functions for common operations
 export const supabaseOperations = {
