@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabaseOperations } from '@/integrations/supabase/client-custom';
 import { useAuth } from './AuthProvider';
@@ -32,7 +33,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, Search } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import AccessDenied from './AccessDenied';
-import { AuditLog, UserData } from '@/integrations/supabase/custom-types';
+import { AuditLog } from '@/integrations/supabase/custom-types';
 
 interface AuditLogWithEmail extends AuditLog {
   user_email?: string;
@@ -66,9 +67,11 @@ const AdminAuditView: React.FC = () => {
           throw error;
         }
 
+        const auditLogs: AuditLog[] = data || [];
+
         const userIds: string[] = [
           ...new Set(
-            (data?.map((log: { user_id: string | null }) => log.user_id).filter((id): id is string => !!id) || [])
+            auditLogs.map((log) => log.user_id).filter((id): id is string => !!id)
           ),
         ];
 
@@ -100,10 +103,10 @@ const AdminAuditView: React.FC = () => {
           }
         }
 
-        const formattedData: AuditLogWithEmail[] = data?.map((log: AuditLog) => ({
+        const formattedData: AuditLogWithEmail[] = auditLogs.map((log: AuditLog) => ({
           ...log,
-          user_email: log.user_id ? (userEmails[String(log.user_id)] || String(log.user_id)) : 'Sistema'
-        })) || [];
+          user_email: log.user_id ? (userEmails[log.user_id] || log.user_id) : 'Sistema'
+        }));
 
         setLogs(formattedData);
 
