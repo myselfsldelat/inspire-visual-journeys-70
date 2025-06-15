@@ -7,16 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield, Settings, Eye, EyeOff, UserPlus } from 'lucide-react';
+import { Loader2, Shield, Settings, Eye, EyeOff, UserPlus, Mail, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const AdminLogin: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@bikenight.com');
+  const [password, setPassword] = useState('BikeNight2024!');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailNotConfirmed, setShowEmailNotConfirmed] = useState(false);
+  const [confirmingEmail, setConfirmingEmail] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -43,7 +44,7 @@ const AdminLogin: React.FC = () => {
         // Check if it's an email not confirmed error
         if (authError.message?.includes('Email not confirmed')) {
           setShowEmailNotConfirmed(true);
-          setError('Email não confirmado. Verifique sua caixa de entrada ou crie um novo usuário.');
+          setError('Email não confirmado. Use uma das opções abaixo para resolver:');
         } else {
           throw authError;
         }
@@ -85,9 +86,52 @@ const AdminLogin: React.FC = () => {
     }
   };
 
+  const handleConfirmEmailDirectly = async () => {
+    setConfirmingEmail(true);
+    setError(null);
+
+    try {
+      // Get the user by email first
+      const { data: users } = await supabaseCustom.auth.admin.listUsers();
+      const user = users.users?.find(u => u.email === email);
+
+      if (user) {
+        // Update the user to be confirmed
+        const { error: updateError } = await supabaseCustom.auth.admin.updateUserById(
+          user.id,
+          { email_confirm: true }
+        );
+
+        if (updateError) {
+          console.error('Error confirming email:', updateError);
+          setError('Erro ao confirmar email. Tente criar um novo usuário.');
+        } else {
+          toast({
+            title: 'Email confirmado!',
+            description: 'Agora você pode fazer login normalmente.',
+          });
+          setShowEmailNotConfirmed(false);
+          // Try to login again
+          handleLogin(new Event('submit') as any);
+        }
+      } else {
+        setError('Usuário não encontrado. Crie um novo usuário administrador.');
+      }
+    } catch (error: any) {
+      console.error('Error confirming email:', error);
+      setError('Erro ao confirmar email. Use a opção de criar novo usuário.');
+    } finally {
+      setConfirmingEmail(false);
+    }
+  };
+
   const handleCreateNewUser = () => {
-    // Redirect to admin setup with a parameter to indicate creating new user
     navigate('/admin-setup?create-new=true');
+  };
+
+  const useDefaultCredentials = () => {
+    setEmail('admin@bikenight.com');
+    setPassword('BikeNight2024!');
   };
 
   return (
@@ -113,15 +157,63 @@ const AdminLogin: React.FC = () => {
               </Alert>
             )}
 
+            {/* Default credentials info */}
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Credenciais padrão:</strong>
+                <br />Email: admin@bikenight.com
+                <br />Senha: BikeNight2024!
+                <div className="mt-2">
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm"
+                    onClick={useDefaultCredentials}
+                  >
+                    Usar Credenciais Padrão
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+
             {showEmailNotConfirmed && (
               <Alert>
+                <Mail className="h-4 w-4" />
                 <AlertDescription>
                   <div className="space-y-3">
                     <p className="font-medium">O email não foi confirmado.</p>
-                    <div className="text-sm space-y-1">
-                      <p>• Verifique sua caixa de entrada e spam</p>
-                      <p>• Clique no link de confirmação recebido</p>
-                      <p>• Ou crie um novo usuário administrador</p>
+                    
+                    <div className="space-y-2">
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleConfirmEmailDirectly}
+                        disabled={confirmingEmail}
+                      >
+                        {confirmingEmail ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Confirmando Email...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Confirmar Email Automaticamente
+                          </>
+                        )}
+                      </Button>
+                      
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleCreateNewUser}
+                      >
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Criar Novo Usuário Administrador
+                      </Button>
                     </div>
                   </div>
                 </AlertDescription>
@@ -179,18 +271,6 @@ const AdminLogin: React.FC = () => {
                 'Entrar'
               )}
             </Button>
-
-            {showEmailNotConfirmed && (
-              <Button 
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleCreateNewUser}
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                Criar Novo Usuário Administrador
-              </Button>
-            )}
           </form>
           
           <div className="mt-6 space-y-4">
