@@ -139,5 +139,9 @@ export const supabaseOperations = {
 
   async getUserById(userId: string) {
     return await supabaseCustom.rpc('get_user_by_id', { user_id: userId });
+  },
+
+  async hasAnyAdmin() {
+    return await supabaseCustom.rpc('has_any_admin');
   }
 };

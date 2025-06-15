@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabaseCustom } from '@/integrations/supabase/client-custom';
+import { supabaseCustom, supabaseOperations } from '@/integrations/supabase/client-custom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,15 +26,12 @@ const AdminSetup: React.FC = () => {
 
   const checkExistingAdmin = async () => {
     try {
-      const { data, error } = await (supabaseCustom as any)
-        .from('admin_profiles')
-        .select('id')
-        .limit(1);
+      const { data, error } = await supabaseOperations.hasAnyAdmin();
       
       if (error) {
         console.error('Erro ao verificar admin existente:', error);
       } else {
-        setHasAdmin(data && data.length > 0);
+        setHasAdmin(data);
       }
     } catch (error) {
       console.error('Erro ao verificar admin:', error);
@@ -75,12 +71,10 @@ const AdminSetup: React.FC = () => {
         console.log('Usuário criado:', authData.user.id);
         
         // Agora criar o perfil de admin
-        const { error: profileError } = await (supabaseCustom as any)
-          .from('admin_profiles')
-          .insert([{
+        const { error: profileError } = await supabaseOperations.insertAdminProfile({
             id: authData.user.id,
             role: 'super_admin'
-          }]);
+        });
 
         if (profileError) {
           console.error('Erro ao criar perfil admin:', profileError);

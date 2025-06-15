@@ -176,6 +176,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_super_admins: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       create_first_super_admin: {
         Args: { email_param: string; password_param: string }
         Returns: Json
@@ -183,6 +187,10 @@ export type Database = {
       get_my_admin_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      has_any_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
     }
     Enums: {
