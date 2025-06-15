@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield, Settings, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Shield, Settings, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const AdminLogin: React.FC = () => {
@@ -16,6 +16,7 @@ const AdminLogin: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showEmailNotConfirmed, setShowEmailNotConfirmed] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -29,6 +30,7 @@ const AdminLogin: React.FC = () => {
 
     setLoading(true);
     setError(null);
+    setShowEmailNotConfirmed(false);
 
     try {
       // Authenticate user
@@ -37,7 +39,16 @@ const AdminLogin: React.FC = () => {
         password,
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        // Check if it's an email not confirmed error
+        if (authError.message?.includes('Email not confirmed')) {
+          setShowEmailNotConfirmed(true);
+          setError('Email não confirmado. Verifique sua caixa de entrada ou crie um novo usuário.');
+        } else {
+          throw authError;
+        }
+        return;
+      }
 
       if (authData.user) {
         // Check if user is admin
@@ -74,6 +85,11 @@ const AdminLogin: React.FC = () => {
     }
   };
 
+  const handleCreateNewUser = () => {
+    // Redirect to admin setup to create a new user
+    navigate('/admin-setup');
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-event-dark via-gray-800 to-event-blue p-4">
       <Card className="w-full max-w-md">
@@ -94,6 +110,18 @@ const AdminLogin: React.FC = () => {
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {showEmailNotConfirmed && (
+              <Alert>
+                <AlertDescription>
+                  O email não foi confirmado. Você pode:
+                  <div className="mt-2 space-y-2">
+                    <p className="text-sm">• Verificar sua caixa de entrada e clicar no link de confirmação</p>
+                    <p className="text-sm">• Ou criar um novo usuário administrador</p>
+                  </div>
+                </AlertDescription>
               </Alert>
             )}
             
@@ -148,6 +176,18 @@ const AdminLogin: React.FC = () => {
                 'Entrar'
               )}
             </Button>
+
+            {showEmailNotConfirmed && (
+              <Button 
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleCreateNewUser}
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Criar Novo Usuário Administrador
+              </Button>
+            )}
           </form>
           
           <div className="mt-6 space-y-4">
