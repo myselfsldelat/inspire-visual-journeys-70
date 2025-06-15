@@ -1,3 +1,4 @@
+
 import { supabase } from './client';
 
 // Reutilizamos o cliente Supabase principal e fazemos um cast para 'any' 
@@ -143,5 +144,9 @@ export const supabaseOperations = {
 
   async hasAnyAdmin() {
     return await supabaseCustom.rpc('has_any_admin');
+  },
+
+  async canCreateAdmin() {
+    return await supabaseCustom.rpc('can_create_admin');
   }
 };

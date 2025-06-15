@@ -176,6 +176,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_create_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       count_super_admins: {
         Args: Record<PropertyKey, never>
         Returns: number

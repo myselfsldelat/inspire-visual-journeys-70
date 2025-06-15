@@ -18,6 +18,7 @@ const AdminSetup: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [checkingExisting, setCheckingExisting] = useState(true);
   const [hasAdmin, setHasAdmin] = useState(false);
+  const [canCreate, setCanCreate] = useState(false);
   const [isCreatingAdditional, setIsCreatingAdditional] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -28,16 +29,31 @@ const AdminSetup: React.FC = () => {
 
   const checkExistingAdmin = async () => {
     try {
-      const { data, error } = await supabaseOperations.hasAnyAdmin();
+      console.log('Verificando admins existentes...');
       
-      if (error) {
-        console.error('Erro ao verificar admin existente:', error);
+      // Verificar se há algum admin
+      const { data: hasAdminData, error: hasAdminError } = await supabaseOperations.hasAnyAdmin();
+      
+      if (hasAdminError) {
+        console.error('Erro ao verificar admin existente:', hasAdminError);
       } else {
-        setHasAdmin(data);
-        // Se já tem admin e veio da página de login, permite criar adicional
-        if (data && window.location.search.includes('create-new')) {
-          setIsCreatingAdditional(true);
-        }
+        console.log('Tem admin?', hasAdminData);
+        setHasAdmin(hasAdminData);
+      }
+
+      // Verificar se pode criar admin
+      const { data: canCreateData, error: canCreateError } = await supabaseOperations.canCreateAdmin();
+      
+      if (canCreateError) {
+        console.error('Erro ao verificar permissão para criar admin:', canCreateError);
+      } else {
+        console.log('Pode criar admin?', canCreateData);
+        setCanCreate(canCreateData);
+      }
+
+      // Se já tem admin e veio da página de login, permite criar adicional
+      if (hasAdminData && window.location.search.includes('create-new')) {
+        setIsCreatingAdditional(true);
       }
     } catch (error) {
       console.error('Erro ao verificar admin:', error);
@@ -78,6 +94,7 @@ const AdminSetup: React.FC = () => {
       });
 
       if (authError) {
+        console.error('Erro de autenticação:', authError);
         if (authError.message?.includes('User already registered')) {
           setError('Este email já está registrado. Tente fazer login ou use outro email.');
         } else {
@@ -89,8 +106,13 @@ const AdminSetup: React.FC = () => {
       if (authData.user) {
         console.log('Usuário criado:', authData.user.id);
         
+        // Aguardar um pouco para garantir que o usuário foi criado
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Criar o perfil de admin
         const adminRole = isCreatingAdditional || hasAdmin ? 'admin' : 'super_admin';
+        console.log('Criando perfil com role:', adminRole);
+        
         const { error: profileError } = await supabaseOperations.insertAdminProfile({
             id: authData.user.id,
             role: adminRole
@@ -98,7 +120,7 @@ const AdminSetup: React.FC = () => {
 
         if (profileError) {
           console.error('Erro ao criar perfil admin:', profileError);
-          throw profileError;
+          throw new Error(`Erro ao criar perfil: ${profileError.message}`);
         }
 
         console.log('Perfil admin criado com sucesso');
@@ -137,7 +159,7 @@ const AdminSetup: React.FC = () => {
     );
   }
 
-  if (hasAdmin && !success && !isCreatingAdditional) {
+  if (hasAdmin && !success && !isCreatingAdditional && !canCreate) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-event-dark via-gray-800 to-event-blue p-4">
         <Card className="w-full max-w-md">
@@ -265,6 +287,14 @@ const AdminSetup: React.FC = () => {
                   </AlertDescription>
                 </Alert>
               )}
+
+              {!canCreate && hasAdmin && (
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    Você não tem permissão para criar novos administradores. Faça login como super administrador primeiro.
+                  </AlertDescription>
+                </Alert>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="email">Email do Administrador</Label>
@@ -299,7 +329,7 @@ const AdminSetup: React.FC = () => {
               <Button 
                 type="submit" 
                 className="w-full bg-event-orange hover:bg-orange-600" 
-                disabled={loading}
+                disabled={loading || (!canCreate && hasAdmin)}
               >
                 {loading ? (
                   <>
