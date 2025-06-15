@@ -180,6 +180,10 @@ export type Database = {
         Args: { email_param: string; password_param: string }
         Returns: Json
       }
+      get_my_admin_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
