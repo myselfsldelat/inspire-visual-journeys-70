@@ -11,8 +11,8 @@ import { Loader2, Shield, Settings, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const AdminLogin: React.FC = () => {
-  const [email, setEmail] = useState('admin@bikenight.com');
-  const [password, setPassword] = useState('BikeNight2024!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -86,8 +86,8 @@ const AdminLogin: React.FC = () => {
   };
 
   const handleCreateNewUser = () => {
-    // Redirect to admin setup to create a new user
-    navigate('/admin-setup');
+    // Redirect to admin setup with a parameter to indicate creating new user
+    navigate('/admin-setup?create-new=true');
   };
 
   return (
@@ -116,10 +116,13 @@ const AdminLogin: React.FC = () => {
             {showEmailNotConfirmed && (
               <Alert>
                 <AlertDescription>
-                  O email não foi confirmado. Você pode:
-                  <div className="mt-2 space-y-2">
-                    <p className="text-sm">• Verificar sua caixa de entrada e clicar no link de confirmação</p>
-                    <p className="text-sm">• Ou criar um novo usuário administrador</p>
+                  <div className="space-y-3">
+                    <p className="font-medium">O email não foi confirmado.</p>
+                    <div className="text-sm space-y-1">
+                      <p>• Verifique sua caixa de entrada e spam</p>
+                      <p>• Clique no link de confirmação recebido</p>
+                      <p>• Ou crie um novo usuário administrador</p>
+                    </div>
                   </div>
                 </AlertDescription>
               </Alert>
@@ -130,7 +133,7 @@ const AdminLogin: React.FC = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@bikenightamazonas.com"
+                placeholder="admin@exemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
@@ -199,6 +202,17 @@ const AdminLogin: React.FC = () => {
                 <Settings className="h-4 w-4 mr-1" />
                 Configuração inicial do sistema
               </Link>
+            </div>
+
+            <div className="text-center">
+              <Button
+                variant="link"
+                onClick={handleCreateNewUser}
+                className="text-sm text-event-orange hover:underline p-0"
+              >
+                <UserPlus className="h-4 w-4 mr-1" />
+                Criar administrador adicional
+              </Button>
             </div>
             
             <div className="text-center">
