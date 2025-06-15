@@ -7,14 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield, CheckCircle, UserPlus, AlertTriangle } from 'lucide-react';
+import { Loader2, Shield, CheckCircle, UserPlus, AlertTriangle, Key, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const AdminSetup: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [adminRole, setAdminRole] = useState<'admin' | 'super_admin'>('admin');
+  const [email, setEmail] = useState('admin@bikenight.com');
+  const [password, setPassword] = useState('BikeNight2024!');
+  const [adminRole, setAdminRole] = useState<'admin' | 'super_admin'>('super_admin');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -23,6 +23,7 @@ const AdminSetup: React.FC = () => {
   const [canCreate, setCanCreate] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [showDefaultCredentials, setShowDefaultCredentials] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -39,7 +40,6 @@ const AdminSetup: React.FC = () => {
       if (session?.user) {
         setCurrentUser(session.user);
         
-        // Verificar role do usuário atual
         const { data: adminProfile } = await supabaseCustom
           .from('admin_profiles')
           .select('role')
@@ -59,7 +59,6 @@ const AdminSetup: React.FC = () => {
     try {
       console.log('Verificando admins existentes...');
       
-      // Verificar se há algum admin
       const { data: hasAdminData, error: hasAdminError } = await supabaseOperations.hasAnyAdmin();
       
       if (hasAdminError) {
@@ -67,9 +66,13 @@ const AdminSetup: React.FC = () => {
       } else {
         console.log('Tem admin?', hasAdminData);
         setHasAdmin(hasAdminData);
+        
+        // Se não há admin, mostrar credenciais padrão
+        if (!hasAdminData) {
+          setShowDefaultCredentials(true);
+        }
       }
 
-      // Verificar se pode criar admin
       const { data: canCreateData, error: canCreateError } = await supabaseOperations.canCreateAdmin();
       
       if (canCreateError) {
@@ -110,7 +113,6 @@ const AdminSetup: React.FC = () => {
     try {
       console.log('Criando usuário admin...', { email, role: adminRole, currentUserRole });
       
-      // Criar o usuário no Supabase Auth
       const { data: authData, error: authError } = await supabaseCustom.auth.signUp({
         email,
         password,
@@ -135,13 +137,11 @@ const AdminSetup: React.FC = () => {
       if (authData.user) {
         console.log('Usuário criado:', authData.user.id);
         
-        // Aguardar um pouco para garantir que o usuário foi criado
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Determinar o role baseado no contexto
         let finalRole = adminRole;
         if (!hasAdmin) {
-          finalRole = 'super_admin'; // Primeiro admin sempre é super admin
+          finalRole = 'super_admin';
         }
         
         console.log('Criando perfil com role:', finalRole);
@@ -164,7 +164,6 @@ const AdminSetup: React.FC = () => {
           description: `Novo ${finalRole === 'super_admin' ? 'Super Admin' : 'Admin'} criado. Verifique o email para confirmar a conta.`,
         });
 
-        // Redirecionar para login após 3 segundos
         setTimeout(() => {
           navigate('/admin-login');
         }, 3000);
@@ -177,6 +176,12 @@ const AdminSetup: React.FC = () => {
     }
   };
 
+  const useDefaultCredentials = () => {
+    setEmail('admin@bikenight.com');
+    setPassword('BikeNight2024!');
+    setAdminRole('super_admin');
+  };
+
   if (checkingExisting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-event-dark via-gray-800 to-event-blue p-4">
@@ -184,7 +189,7 @@ const AdminSetup: React.FC = () => {
           <CardContent className="pt-6">
             <div className="text-center">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">Verificando configuração...</p>
+              <p className="text-gray-600">Verificando configuração do sistema...</p>
             </div>
           </CardContent>
         </Card>
@@ -291,14 +296,14 @@ const AdminSetup: React.FC = () => {
     );
   }
 
-  const pageTitle = isCreatingAdditional ? 'Criar Novo Administrador' : 'Configuração Inicial';
+  const pageTitle = isCreatingAdditional ? 'Criar Novo Administrador' : 'Configuração Inicial do Sistema';
   const pageDescription = isCreatingAdditional 
     ? 'Adicione um novo administrador ao sistema'
-    : 'Crie o primeiro super administrador do sistema';
+    : 'Configure o primeiro super administrador do sistema';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-event-dark via-gray-800 to-event-blue p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-lg">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
             <div className="bg-event-orange p-3 rounded-full">
@@ -336,9 +341,12 @@ const AdminSetup: React.FC = () => {
               </div>
               
               <div className="p-4 bg-gray-50 rounded-lg text-left">
-                <p className="font-medium text-gray-800 mb-2">Suas credenciais:</p>
+                <p className="font-medium text-gray-800 mb-2">Suas credenciais de acesso:</p>
                 <p className="text-sm text-gray-600 break-all">
                   <strong>Email:</strong> {email}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Senha:</strong> {password}
                 </p>
                 <p className="text-sm text-gray-600">
                   <strong>Tipo:</strong> {adminRole === 'super_admin' ? 'Super Admin' : 'Admin'}
@@ -346,9 +354,10 @@ const AdminSetup: React.FC = () => {
               </div>
 
               <Alert>
+                <Key className="h-4 w-4" />
                 <AlertDescription className="text-sm">
-                  <strong>Importante:</strong> Você deve confirmar seu email antes de fazer login. 
-                  Após a confirmação, você será redirecionado automaticamente.
+                  <strong>Importante:</strong> Guarde essas credenciais! Após confirmar o email, 
+                  você poderá fazer login e alterar a senha no painel administrativo.
                 </AlertDescription>
               </Alert>
             </div>
@@ -361,20 +370,42 @@ const AdminSetup: React.FC = () => {
                 </Alert>
               )}
 
+              {!hasAdmin && (
+                <Alert>
+                  <Database className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Sistema não configurado:</strong> Nenhum administrador encontrado no banco de dados. 
+                    Este será o primeiro Super Admin do sistema.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {showDefaultCredentials && !hasAdmin && (
+                <Alert>
+                  <Key className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Credenciais padrão sugeridas:</strong>
+                    <br />Email: admin@bikenight.com
+                    <br />Senha: BikeNight2024!
+                    <div className="mt-2">
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        size="sm"
+                        onClick={useDefaultCredentials}
+                      >
+                        Usar Credenciais Padrão
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {currentUser && (
                 <Alert>
                   <Shield className="h-4 w-4" />
                   <AlertDescription>
                     Logado como: {currentUser.email} ({currentUserRole || 'verificando...'})
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {isCreatingAdditional && (
-                <Alert>
-                  <AlertDescription>
-                    Você está criando um administrador adicional. 
-                    {!hasAdmin ? ' Este será o primeiro admin do sistema.' : ' Você precisa ser Super Admin para fazer isso.'}
                   </AlertDescription>
                 </Alert>
               )}
@@ -405,7 +436,7 @@ const AdminSetup: React.FC = () => {
                   minLength={6}
                 />
                 <p className="text-xs text-gray-500">
-                  A senha deve ter pelo menos 6 caracteres
+                  A senha deve ter pelo menos 6 caracteres. Você pode alterá-la após o primeiro login.
                 </p>
               </div>
 
@@ -437,7 +468,7 @@ const AdminSetup: React.FC = () => {
                 ) : (
                   <>
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Criar {!hasAdmin ? 'Super Admin' : adminRole === 'super_admin' ? 'Super Admin' : 'Admin'}
+                    Criar {!hasAdmin ? 'Primeiro Super Admin' : adminRole === 'super_admin' ? 'Super Admin' : 'Admin'}
                   </>
                 )}
               </Button>
