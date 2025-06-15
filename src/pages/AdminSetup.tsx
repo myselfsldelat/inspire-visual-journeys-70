@@ -1,31 +1,59 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabaseCustom, supabaseOperations } from '@/integrations/supabase/client-custom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield, CheckCircle, UserPlus } from 'lucide-react';
+import { Loader2, Shield, CheckCircle, UserPlus, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const AdminSetup: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [adminRole, setAdminRole] = useState<'admin' | 'super_admin'>('admin');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [checkingExisting, setCheckingExisting] = useState(true);
   const [hasAdmin, setHasAdmin] = useState(false);
   const [canCreate, setCanCreate] = useState(false);
-  const [isCreatingAdditional, setIsCreatingAdditional] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const isCreatingAdditional = searchParams.get('create-new') === 'true';
 
   useEffect(() => {
     checkExistingAdmin();
+    checkCurrentUser();
   }, []);
+
+  const checkCurrentUser = async () => {
+    try {
+      const { data: { session } } = await supabaseCustom.auth.getSession();
+      if (session?.user) {
+        setCurrentUser(session.user);
+        
+        // Verificar role do usuário atual
+        const { data: adminProfile } = await supabaseCustom
+          .from('admin_profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (adminProfile) {
+          setCurrentUserRole(adminProfile.role);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar usuário atual:', error);
+    }
+  };
 
   const checkExistingAdmin = async () => {
     try {
@@ -50,11 +78,6 @@ const AdminSetup: React.FC = () => {
         console.log('Pode criar admin?', canCreateData);
         setCanCreate(canCreateData);
       }
-
-      // Se já tem admin e veio da página de login, permite criar adicional
-      if (hasAdminData && window.location.search.includes('create-new')) {
-        setIsCreatingAdditional(true);
-      }
     } catch (error) {
       console.error('Erro ao verificar admin:', error);
     } finally {
@@ -75,11 +98,17 @@ const AdminSetup: React.FC = () => {
       return;
     }
 
+    // Verificação adicional de permissão
+    if (hasAdmin && !canCreate && currentUserRole !== 'super_admin') {
+      setError('Você precisa estar logado como super administrador para criar novos administradores.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      console.log('Criando usuário admin...');
+      console.log('Criando usuário admin...', { email, role: adminRole, currentUserRole });
       
       // Criar o usuário no Supabase Auth
       const { data: authData, error: authError } = await supabaseCustom.auth.signUp({
@@ -88,7 +117,7 @@ const AdminSetup: React.FC = () => {
         options: {
           emailRedirectTo: `${window.location.origin}/admin-login`,
           data: {
-            role: 'admin' // Metadados para identificar como admin
+            role: adminRole
           }
         }
       });
@@ -109,13 +138,17 @@ const AdminSetup: React.FC = () => {
         // Aguardar um pouco para garantir que o usuário foi criado
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Criar o perfil de admin
-        const adminRole = isCreatingAdditional || hasAdmin ? 'admin' : 'super_admin';
-        console.log('Criando perfil com role:', adminRole);
+        // Determinar o role baseado no contexto
+        let finalRole = adminRole;
+        if (!hasAdmin) {
+          finalRole = 'super_admin'; // Primeiro admin sempre é super admin
+        }
+        
+        console.log('Criando perfil com role:', finalRole);
         
         const { error: profileError } = await supabaseOperations.insertAdminProfile({
-            id: authData.user.id,
-            role: adminRole
+          id: authData.user.id,
+          role: finalRole
         });
 
         if (profileError) {
@@ -127,8 +160,8 @@ const AdminSetup: React.FC = () => {
         
         setSuccess(true);
         toast({
-          title: 'Usuário criado com sucesso!',
-          description: 'Verifique seu email para confirmar a conta e depois faça login.',
+          title: 'Administrador criado com sucesso!',
+          description: `Novo ${finalRole === 'super_admin' ? 'Super Admin' : 'Admin'} criado. Verifique o email para confirmar a conta.`,
         });
 
         // Redirecionar para login após 3 segundos
@@ -159,7 +192,54 @@ const AdminSetup: React.FC = () => {
     );
   }
 
-  if (hasAdmin && !success && !isCreatingAdditional && !canCreate) {
+  if (hasAdmin && !success && isCreatingAdditional && !canCreate && currentUserRole !== 'super_admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-event-dark via-gray-800 to-event-blue p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1">
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-red-500 p-3 rounded-full">
+                <AlertTriangle className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl text-center">Acesso Negado</CardTitle>
+            <CardDescription className="text-center">
+              Você precisa de permissões de Super Admin
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <div className="space-y-4">
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Apenas Super Administradores podem criar novos administradores. 
+                  {currentUser ? `Usuário atual: ${currentUser.email} (${currentUserRole || 'sem permissões'})` : 'Faça login como Super Admin primeiro.'}
+                </AlertDescription>
+              </Alert>
+              
+              <Button 
+                onClick={() => navigate('/admin-login')}
+                className="w-full bg-event-orange hover:bg-orange-600"
+              >
+                Fazer Login como Super Admin
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/')}
+                className="w-full"
+              >
+                Voltar ao Início
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (hasAdmin && !success && !isCreatingAdditional) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-event-dark via-gray-800 to-event-blue p-4">
         <Card className="w-full max-w-md">
@@ -190,7 +270,7 @@ const AdminSetup: React.FC = () => {
 
               <Button 
                 variant="outline"
-                onClick={() => setIsCreatingAdditional(true)}
+                onClick={() => navigate('/admin-setup?create-new=true')}
                 className="w-full"
               >
                 <UserPlus className="mr-2 h-4 w-4" />
@@ -261,7 +341,7 @@ const AdminSetup: React.FC = () => {
                   <strong>Email:</strong> {email}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <strong>Senha:</strong> (a que você definiu)
+                  <strong>Tipo:</strong> {adminRole === 'super_admin' ? 'Super Admin' : 'Admin'}
                 </p>
               </div>
 
@@ -276,22 +356,25 @@ const AdminSetup: React.FC = () => {
             <form onSubmit={handleCreateAdmin} className="space-y-4">
               {error && (
                 <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {currentUser && (
+                <Alert>
+                  <Shield className="h-4 w-4" />
+                  <AlertDescription>
+                    Logado como: {currentUser.email} ({currentUserRole || 'verificando...'})
+                  </AlertDescription>
                 </Alert>
               )}
 
               {isCreatingAdditional && (
                 <Alert>
                   <AlertDescription>
-                    Você está criando um administrador adicional. Este usuário terá permissões de admin (não super admin).
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {!canCreate && hasAdmin && (
-                <Alert variant="destructive">
-                  <AlertDescription>
-                    Você não tem permissão para criar novos administradores. Faça login como super administrador primeiro.
+                    Você está criando um administrador adicional. 
+                    {!hasAdmin ? ' Este será o primeiro admin do sistema.' : ' Você precisa ser Super Admin para fazer isso.'}
                   </AlertDescription>
                 </Alert>
               )}
@@ -325,21 +408,36 @@ const AdminSetup: React.FC = () => {
                   A senha deve ter pelo menos 6 caracteres
                 </p>
               </div>
+
+              {(isCreatingAdditional && hasAdmin && currentUserRole === 'super_admin') && (
+                <div className="space-y-2">
+                  <Label htmlFor="role">Tipo de Administrador</Label>
+                  <Select value={adminRole} onValueChange={(value: 'admin' | 'super_admin') => setAdminRole(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin - Gerenciar conteúdo</SelectItem>
+                      <SelectItem value="super_admin">Super Admin - Acesso total</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               
               <Button 
                 type="submit" 
                 className="w-full bg-event-orange hover:bg-orange-600" 
-                disabled={loading || (!canCreate && hasAdmin)}
+                disabled={loading}
               >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Criando {isCreatingAdditional ? 'Admin' : 'Super Admin'}...
+                    Criando {!hasAdmin ? 'Super Admin' : adminRole === 'super_admin' ? 'Super Admin' : 'Admin'}...
                   </>
                 ) : (
                   <>
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Criar {isCreatingAdditional ? 'Admin' : 'Super Admin'}
+                    Criar {!hasAdmin ? 'Super Admin' : adminRole === 'super_admin' ? 'Super Admin' : 'Admin'}
                   </>
                 )}
               </Button>
@@ -351,7 +449,7 @@ const AdminSetup: React.FC = () => {
               {isCreatingAdditional && (
                 <Button 
                   variant="outline"
-                  onClick={() => setIsCreatingAdditional(false)}
+                  onClick={() => navigate('/admin-setup')}
                   className="w-full text-sm"
                 >
                   Voltar
