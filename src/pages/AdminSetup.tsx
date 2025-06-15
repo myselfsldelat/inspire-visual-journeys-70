@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabaseCustom, supabaseOperations } from '@/integrations/supabase/client-custom';
@@ -59,7 +60,7 @@ const AdminSetup: React.FC = () => {
         email,
         password,
         options: {
-          emailRedirectTo: undefined, // Evita redirect automático
+          emailRedirectTo: `${window.location.origin}/admin-login`, // Redireciona para o login após confirmação
         }
       });
 
@@ -85,14 +86,14 @@ const AdminSetup: React.FC = () => {
         
         setSuccess(true);
         toast({
-          title: 'Super Admin criado com sucesso!',
-          description: 'Agora você pode fazer login com as credenciais criadas.',
+          title: 'Quase lá!',
+          description: 'Enviamos um e-mail de confirmação. Verifique sua caixa de entrada.',
         });
 
-        // Redirecionar para login após 3 segundos
+        // Redirecionar para login após 5 segundos para dar tempo de ler
         setTimeout(() => {
           navigate('/admin-login');
-        }, 3000);
+        }, 5000);
       }
     } catch (error: any) {
       console.error('Erro ao criar admin:', error);
@@ -175,11 +176,11 @@ const AdminSetup: React.FC = () => {
             </div>
           </div>
           <CardTitle className="text-2xl text-center">
-            {success ? 'Admin Criado!' : 'Configuração Inicial'}
+            {success ? 'Confirme seu E-mail' : 'Configuração Inicial'}
           </CardTitle>
           <CardDescription className="text-center">
             {success 
-              ? 'Super administrador criado com sucesso'
+              ? 'Um e-mail de confirmação foi enviado para sua caixa de entrada.'
               : 'Crie o primeiro super administrador do sistema'
             }
           </CardDescription>
@@ -191,10 +192,13 @@ const AdminSetup: React.FC = () => {
               <div className="bg-green-50 p-4 rounded-lg">
                 <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-2" />
                 <p className="text-green-800 font-medium">
-                  Super Admin criado com sucesso!
+                  Usuário criado com sucesso!
                 </p>
                 <p className="text-green-600 text-sm mt-1">
-                  Redirecionando para o login...
+                  Por favor, clique no link enviado para seu e-mail para ativar sua conta.
+                </p>
+                 <p className="text-green-600 text-sm mt-1">
+                  Você será redirecionado para a página de login.
                 </p>
               </div>
               
