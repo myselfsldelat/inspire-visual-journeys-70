@@ -188,9 +188,39 @@ export type Database = {
         Args: { email_param: string; password_param: string }
         Returns: Json
       }
+      get_all_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          email: string
+          created_at: string
+          last_sign_in_at: string
+          email_confirmed_at: string
+        }[]
+      }
       get_my_admin_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_user_by_email: {
+        Args: { user_email: string }
+        Returns: {
+          id: string
+          email: string
+          created_at: string
+          last_sign_in_at: string
+          email_confirmed_at: string
+        }[]
+      }
+      get_user_by_id: {
+        Args: { user_id: string }
+        Returns: {
+          id: string
+          email: string
+          created_at: string
+          last_sign_in_at: string
+          email_confirmed_at: string
+        }[]
       }
       has_any_admin: {
         Args: Record<PropertyKey, never>

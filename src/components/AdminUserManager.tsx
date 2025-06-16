@@ -30,9 +30,10 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
-import { UserPlus, Users, Shield, Trash2, Crown } from 'lucide-react';
+import { UserPlus, Users, Shield, Trash2, Crown, AlertCircle, RefreshCw } from 'lucide-react';
 import { AdminProfile, UserData } from '@/integrations/supabase/custom-types';
 
 interface AdminUser {
@@ -51,6 +52,7 @@ interface NewAdminFormData {
 const AdminUserManager: React.FC = () => {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
   const { isSuperAdmin } = useAuth();
@@ -70,36 +72,75 @@ const AdminUserManager: React.FC = () => {
   }, [isSuperAdmin]);
 
   const fetchAdmins = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      // First get admin profiles
+      console.log('Iniciando busca de administradores...');
+      
+      // Primeiro buscar perfis de admin
       const { data: adminProfiles, error: profilesError } = await supabaseOperations.getAdminProfiles();
       
-      if (profilesError) throw profilesError;
-      
-      // Get user emails using the function with proper typing
-      const { data: usersData, error: usersError } = await supabaseOperations.getAllUsers() as { data: UserData[] | null, error: any };
-      
-      if (usersError) throw usersError;
-      
-      // Map the data correctly
-      const formattedAdmins: AdminUser[] = adminProfiles?.map((profile: AdminProfile) => {
-        const userData = usersData?.find(user => user.id === profile.id);
-        return {
+      if (profilesError) {
+        console.error('Erro ao buscar perfis de admin:', profilesError);
+        throw new Error(`Erro ao buscar perfis: ${profilesError.message}`);
+      }
+
+      console.log('Perfis de admin encontrados:', adminProfiles);
+
+      if (!adminProfiles || adminProfiles.length === 0) {
+        console.log('Nenhum perfil de admin encontrado');
+        setAdmins([]);
+        return;
+      }
+
+      // Buscar dados dos usuários via RPC
+      try {
+        console.log('Buscando dados dos usuários via RPC...');
+        const { data: usersData, error: usersError } = await supabaseOperations.getAllUsers();
+        
+        if (usersError) {
+          console.error('Erro na função RPC get_all_users:', usersError);
+          throw new Error(`Erro ao buscar usuários: ${usersError.message}`);
+        }
+
+        console.log('Dados de usuários recebidos:', usersData);
+
+        // Mapear dados combinando perfis e usuários
+        const formattedAdmins: AdminUser[] = adminProfiles.map((profile: AdminProfile) => {
+          const userData = Array.isArray(usersData) 
+            ? usersData.find((user: any) => user.id === profile.id)
+            : null;
+          
+          return {
+            id: profile.id,
+            email: userData?.email || 'Email não encontrado',
+            role: profile.role as 'admin' | 'super_admin',
+            created_at: profile.created_at || new Date().toISOString(),
+          };
+        });
+
+        console.log('Administradores formatados:', formattedAdmins);
+        setAdmins(formattedAdmins);
+        
+      } catch (rpcError: any) {
+        console.error('Erro específico da função RPC:', rpcError);
+        
+        // Se a função RPC falhar, mostrar apenas os perfis sem email
+        const formattedAdmins: AdminUser[] = adminProfiles.map((profile: AdminProfile) => ({
           id: profile.id,
-          email: userData?.email || 'Email não encontrado',
+          email: 'Função RPC indisponível',
           role: profile.role as 'admin' | 'super_admin',
           created_at: profile.created_at || new Date().toISOString(),
-        };
-      }) || [];
+        }));
+        
+        setAdmins(formattedAdmins);
+        setError('Aviso: Não foi possível carregar emails dos usuários. Verifique se as funções RPC estão configuradas.');
+      }
       
-      setAdmins(formattedAdmins);
     } catch (error: any) {
-      console.error('Error fetching admins:', error);
-      toast({
-        title: 'Erro ao carregar administradores',
-        description: error.message,
-        variant: 'destructive',
-      });
+      console.error('Erro geral ao carregar administradores:', error);
+      setError(error.message || 'Erro desconhecido ao carregar administradores');
     } finally {
       setLoading(false);
     }
@@ -109,25 +150,35 @@ const AdminUserManager: React.FC = () => {
     setCreatingUser(true);
     
     try {
+      console.log('Criando novo administrador:', data.email);
+      
       // Criar usuário no Supabase Auth
       const { data: authData, error: authError } = await supabaseCustom.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: undefined, // Evita redirect automático
+          emailRedirectTo: undefined,
         }
       });
       
-      if (authError) throw authError;
+      if (authError) {
+        console.error('Erro na criação do usuário:', authError);
+        throw authError;
+      }
       
       if (authData.user) {
+        console.log('Usuário criado, adicionando perfil admin...');
+        
         // Adicionar perfil de admin
         const { error: profileError } = await supabaseOperations.insertAdminProfile({
           id: authData.user.id,
           role: data.role,
         });
         
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Erro ao criar perfil admin:', profileError);
+          throw profileError;
+        }
         
         toast({
           title: 'Administrador criado com sucesso',
@@ -139,7 +190,7 @@ const AdminUserManager: React.FC = () => {
         fetchAdmins();
       }
     } catch (error: any) {
-      console.error('Error creating admin:', error);
+      console.error('Erro ao criar administrador:', error);
       toast({
         title: 'Erro ao criar administrador',
         description: error.message,
@@ -154,9 +205,14 @@ const AdminUserManager: React.FC = () => {
     if (!confirm('Tem certeza que deseja remover este administrador?')) return;
     
     try {
+      console.log('Removendo administrador:', adminId);
+      
       const { error } = await supabaseOperations.deleteAdminProfile(adminId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao remover admin:', error);
+        throw error;
+      }
       
       toast({
         title: 'Administrador removido',
@@ -165,7 +221,7 @@ const AdminUserManager: React.FC = () => {
       
       fetchAdmins();
     } catch (error: any) {
-      console.error('Error deleting admin:', error);
+      console.error('Erro ao remover administrador:', error);
       toast({
         title: 'Erro ao remover administrador',
         description: error.message,
@@ -196,19 +252,53 @@ const AdminUserManager: React.FC = () => {
               <Users className="h-6 w-6 text-event-orange" />
               <CardTitle>Gerenciar Administradores</CardTitle>
             </div>
-            <Button 
-              onClick={() => setIsCreateModalOpen(true)}
-              className="bg-event-green hover:bg-green-600"
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Novo Admin
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={fetchAdmins}
+                disabled={loading}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+              <Button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-event-green hover:bg-green-600"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Novo Admin
+              </Button>
+            </div>
           </div>
         </CardHeader>
         
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {error}
+                {error.includes('RPC') && (
+                  <div className="mt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={fetchAdmins}
+                      className="gap-2"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      Tentar Novamente
+                    </Button>
+                  </div>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {loading ? (
             <div className="text-center py-8">
+              <RefreshCw className="h-8 w-8 mx-auto mb-4 text-gray-400 animate-spin" />
               <p className="text-gray-500">Carregando administradores...</p>
             </div>
           ) : (
