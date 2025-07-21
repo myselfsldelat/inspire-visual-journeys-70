@@ -31,7 +31,7 @@ const HistorySection: React.FC<HistorySectionProps> = ({ className }) => {
         <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
           <div className="w-full md:w-1/2 rounded-lg shadow-lg overflow-hidden">
             <img 
-              src="/lovable-uploads/74931d0c-9d05-4201-b56c-d99add7af63b.png"
+              src="/images/74931d0c-9d05-4201-b56c-d99add7af63b.png"
               alt="Primeiro evento do Bike Night Amazonas em 2013" 
               className="w-full h-auto object-cover"
             />

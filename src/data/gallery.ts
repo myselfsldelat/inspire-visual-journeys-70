@@ -20,7 +20,7 @@ export interface GalleryItem {
 export const galleryItems: GalleryItem[] = [
   {
     id: 1,
-    image: "/lovable-uploads/964ed381-d76b-4e70-9b4d-5d693e16b745.png",
+    image: "/images/964ed381-d76b-4e70-9b4d-5d693e16b745.png",
     title: "Bike Night Amazonas",
     description: "Grupo de ciclistas explorando o centro histórico de Manaus em um passeio noturno cheio de energia.",
     motivation: "Pedalando juntos para descobrir um novo olhar sobre a cidade e promover um estilo de vida saudável e sustentável.",
