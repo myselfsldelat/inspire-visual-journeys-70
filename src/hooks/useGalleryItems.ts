@@ -1,10 +1,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Tables } from '@/integrations/supabase/types'; // Corrected import
+import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 
-// Define the specific type for a gallery item using the generic 'Tables' type from Supabase.
 type GalleryItemType = Tables<'gallery_items'>;
 
 interface UseGalleryItemsProps {
@@ -28,18 +27,17 @@ const useGalleryItems = ({
   const hasNextPage = currentPage < totalPages - 1;
   const hasPreviousPage = currentPage > 0;
 
-  const fetchItems = useCallback(async (isRefresh = false, page = currentPage) => {
+  const fetchItems = useCallback(async (isRefresh = false, pageToFetch = currentPage) => {
     if (isRefresh) setRefreshing(true);
     setLoading(true);
     setError(null);
 
     try {
-      console.log('Attempting to fetch gallery items from Supabase...');
       const { data, error: queryError, count } = await supabase
         .from('gallery_items')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
-        .range(page * pageSize, (page * pageSize) + pageSize - 1);
+        .range(pageToFetch * pageSize, (pageToFetch * pageSize) + pageSize - 1);
 
       if (queryError) {
         throw queryError;
@@ -47,7 +45,7 @@ const useGalleryItems = ({
 
       setItems(data || []);
       setTotalItems(count || 0);
-      setCurrentPage(page);
+      setCurrentPage(pageToFetch);
 
       if (isRefresh) {
         toast({
@@ -71,7 +69,7 @@ const useGalleryItems = ({
       setLoading(false);
       if (isRefresh) setRefreshing(false);
     }
-  }, [page, pageSize, toast]);
+  }, [currentPage, pageSize, toast]);
 
   const goToNextPage = () => {
     if (hasNextPage) {
@@ -96,8 +94,7 @@ const useGalleryItems = ({
       const updated = [...current];
       const item = updated[index];
       if (item) {
-        // Corrected property name from 'image_url' to 'image'
-        item.image = "/placeholder.svg"; 
+        item.image = "/placeholder.svg";
       }
       return updated;
     });
