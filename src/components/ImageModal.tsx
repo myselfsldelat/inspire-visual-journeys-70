@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabaseCustom } from '@/integrations/supabase/client-custom';
 import { GalleryItem as GalleryItemType } from '@/data/gallery';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -188,9 +188,13 @@ const ImageModal: React.FC<ImageModalProps> = ({
           {/* Info Section */}
           <div className="w-96 bg-white flex flex-col max-h-[95vh]">
             <div className="p-6 border-b">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">{item.title}</h2>
+              <DialogTitle asChild>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{item.title}</h2>
+              </DialogTitle>
               {item.description && (
-                <p className="text-gray-600 mb-4">{item.description}</p>
+                <DialogDescription asChild>
+                  <p className="text-gray-600 mb-4">{item.description}</p>
+                </DialogDescription>
               )}
               
               {item.personal_message && (
