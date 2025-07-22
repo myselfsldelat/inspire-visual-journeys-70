@@ -76,34 +76,49 @@ Para executar este projeto localmente, siga os passos abaixo.
 
 O projeto está configurado para ser implantado na [Vercel](https://vercel.com/). Qualquer `push` para a branch `main` irá acionar um deploy de produção automaticamente.
 
-**Importante:** O arquivo `vercel.json` na raiz do projeto garante que o roteamento de um aplicativo de página única (SPA) funcione corretamente, redirecionando todas as solicitações para o `index.html`.
-
 ## 📂 Estrutura do Projeto
 
-*   `src/pages`: Componentes que representam as páginas principais da aplicação (ex: `Index.tsx`, `Admin.tsx`).
-*   `src/components`: Componentes reutilizáveis (ex: `Button.tsx`, `AdminHeader.tsx`).
-*   `src/integrations`: Lógica de integração com serviços de terceiros, como o Supabase.
+*   `src/pages`: Componentes que representam as páginas principais da aplicação.
+*   `src/components`: Componentes reutilizáveis.
+*   `src/integrations`: Lógica de integração com serviços de terceiros.
 *   `supabase/migrations`: Scripts SQL para gerenciar a estrutura do banco de dados.
 
 ## 🤝 Como Contribuir
 
 Contribuições são sempre bem-vindas! Se você deseja melhorar o projeto, sinta-se à vontade para abrir uma *Issue* ou enviar um *Pull Request*.
 
-## 📜 Histórico de Soluções Notáveis
+---
 
-Esta seção documenta investigações e correções importantes que servem como aprendizado para a equipe.
+## 📜 Diário de Bordo da Engenharia (Julho/2024)
 
-### Correção: Erro Crítico na Renderização da Galeria (Julho/2024)
+*Esta seção serve como um pipeline de storytelling para que a equipe possa aprender com os desafios e as soluções implementadas.*
 
-*   **Problema:** A aplicação estava falhando em produção com um erro `Minified React error #130`, o que impedia a renderização de qualquer componente que dependesse de dados do Supabase, mais notavelmente a galeria de fotos.
+### **Missão: "Operação Resgate da Galeria"**
 
-*   **Investigação:**
-    1.  A análise inicial apontou que o erro do React era um sintoma, não a causa. Ele ocorria porque o componente da galeria tentava renderizar `undefined`.
-    2.  A investigação no código levou ao hook `useGalleryItems`, que por sua vez utilizava um cliente Supabase (`supabaseCustom`) com a verificação de tipos desabilitada (`as any`). Isso mascarava o erro real.
-    3.  A causa raiz foi encontrada no arquivo `src/integrations/supabase/client.ts`. O cliente Supabase estava sendo inicializado com chaves de acesso (URL e Anon Key) fixas no código (`hardcoded`). Essas chaves não correspondiam às credenciais corretas configuradas no ambiente de produção da Vercel.
+**Relato do Comandante:** "Fomos chamados para uma missão de emergência. A aplicação em produção estava fora do ar, exibindo um enigmático `Minified React error #130`. A galeria, o coração visual do nosso projeto, não batia mais."
 
-*   **Solução:**
-    1.  O arquivo `src/integrations/supabase/client.ts` foi modificado para ler as credenciais do Supabase a partir das variáveis de ambiente (`process.env.VITE_SUPABASE_URL` e `process.env.VITE_SUPABASE_ANON_KEY`), garantindo que a aplicação utilize as chaves corretas para cada ambiente (desenvolvimento e produção).
-    2.  Com a inicialização do cliente corrigida, a comunicação com o Supabase foi restabelecida, e o erro de renderização foi resolvido.
+**Fase 1: Diagnóstico e a Pista Falsa**
+*   **Sintoma:** O erro do React era apenas a febre, não a infecção. A aplicação quebrava porque um componente tentava renderizar `undefined`.
+*   **Investigação Inicial:** Seguimos a trilha até o `useGalleryItems`, nosso hook de busca de dados. A primeira suspeita foi um erro na lógica do hook.
 
-*   **Lição Aprendida:** Credenciais e configurações de ambiente **nunca** devem ser fixadas no código-fonte. Devem sempre ser gerenciadas através de variáveis de ambiente para garantir segurança e portabilidade entre diferentes estágios de deploy.
+**Fase 2: A Causa Raiz - O Segredo Exposto**
+*   **A Descoberta:** A verdadeira causa não estava no React, mas na fundação da nossa conexão com o Supabase. O arquivo `src/integrations/supabase/client.ts` continha **credenciais fixas no código (hardcoded)**. Em produção, onde as variáveis de ambiente corretas existiam, a aplicação nunca as usava, resultando em uma falha de conexão silenciosa.
+*   **A Solução:** Modificamos o `client.ts` para usar **obrigatoriamente** as variáveis de ambiente, garantindo que o cliente Supabase se conectasse com as credenciais corretas para cada ambiente.
+
+**Fase 3: A Batalha pelo Acesso ao Admin**
+*   **O Novo Desafio:** Após corrigir o crash, o painel de administração nos negava acesso com a mensagem "Este usuário não tem permissões".
+*   **A Depuração:**
+    1.  A primeira suspeita foi a conexão, mas o login básico funcionava.
+    2.  Tentamos criar scripts de teste, mas eles falharam repetidamente devido a erros de sintaxe teimosos (uma lição sobre a importância de não insistir em uma abordagem falha).
+    3.  A análise do código de `AdminLogin.tsx` foi a chave. Ela revelou que, após o login, o sistema buscava na tabela `admin_profiles` por uma linha correspondente ao `UID` do usuário.
+    4.  O problema era puramente de **dados**. Nosso usuário de teste, apesar de existir, não tinha uma linha correspondente na tabela de perfis de administrador.
+*   **A Solução Final:** Inserimos manualmente a linha correta na tabela `admin_profiles` através do painel do Supabase, associando o `UID` do usuário ao cargo `admin`. O acesso foi concedido imediatamente.
+
+### **Lições Aprendidas:**
+
+1.  **O Erro da Interface é Quase Sempre um Sintoma:** Um crash no React geralmente aponta para um problema mais profundo na camada de dados.
+2.  **Segredos São Sagrados:** Credenciais **NUNCA** devem estar no código. Esta é a nossa regra de ouro.
+3.  **Não Confie, Verifique os Dados:** Quando a lógica do código parece correta, a causa do problema está quase sempre nos dados que ele está processando.
+4.  **A Simplicidade Vence:** Nossas tentativas de criar scripts complexos falharam. A solução manual e direta no banco de dados foi mais rápida e eficaz.
+
+**Conclusão:** "A missão foi um sucesso. Não apenas restauramos a aplicação, mas a deixamos mais segura, robusta e com uma documentação que servirá de guia para futuras jornadas. A colaboração e a persistência foram nossas melhores ferramentas."
