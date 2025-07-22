@@ -1,0 +1,69 @@
+{
+    "otimizacoes": [
+      {
+        "tecnica": "Critical CSS (inline)",
+        "descricao": "Extrair o CSS essencial para o conteúdo acima da dobra e inseri-lo diretamente no `<head>` para acelerar a renderização visual inicial.",
+        "links": [
+          "https://web.dev/articles/extract-critical-css", 
+          "https://www.smashingmagazine.com/2015/08/understanding-critical-css/"
+        ]
+      },
+      {
+        "tecnica": "Code splitting + Lazy loading (JavaScript)",
+        "descricao": "Dividir o bundle JS em partes menores e carregar módulos apenas quando necessários, usando `import()` e React.lazy/Suspense.",
+        "links": [
+          "https://webpack.js.org/guides/code-splitting/", 
+          "https://legacy.reactjs.org/docs/code-splitting.html",
+          "https://www.greatfrontend.com/blog/code-splitting-and-lazy-loading-in-react"
+        ]
+      },
+      {
+        "tecnica": "Lazy loading de imagens (nativas)",
+        "descricao": "Usar `loading=\"lazy\"` em `<img>` para carregar imagens somente quando estiverem quase visíveis, reduzindo payload inicial.",
+        "links": [
+          "https://web.dev/articles/browser-level-image-lazy-loading", 
+          "https://developer.mozilla.org/en-US/docs/Web/HTML/Guides/Responsive_images"
+        ]
+      },
+      {
+        "tecnica": "Imagens responsivas (srcset, sizes, formatos modernos)",
+        "descricao": "Definir `srcset`, `sizes`, `width`/`height` e usar WebP/AVIF para servir imagens adequadas ao dispositivo e evitar layout shift.",
+        "links": [
+          "https://developer.mozilla.org/en-US/docs/Web/HTML/Guides/Responsive_images", 
+          "https://web.dev/learn/design/responsive-images"
+        ]
+      },
+      {
+        "tecnica": "Preload e preconnect",
+        "descricao": "Usar `<link rel=\"preload\" as=\"image/script/style\">` e `preconnect` para priorizar recursos e reduzir latência.",
+        "links": [
+          "https://webpack.js.org/guides/code-splitting/#prefetchingpreloading", 
+          "https://web.dev/learn/design/responsive-images"
+        ]
+      },
+      {
+        "tecnica": "Minificação e PurgeCSS",
+        "descricao": "Remover CSS/JS não utilizado e minificar todos os arquivos para reduzir o tamanho final do bundle.",
+        "links": [
+          "https://webpack.js.org/guides/code-splitting/", 
+          "https://web.dev/articles/extract-critical-css"
+        ]
+      },
+      {
+        "tecnica": "Cache eficaz (cache-control, ETag)",
+        "descricao": "Configurar cabeçalhos como `cache-control`, `ETag` e `last-modified` para permitir reutilização e validação de recursos.",
+        "links": [
+          "https://web.dev/articles/extract-critical-css"
+        ]
+      },
+      {
+        "tecnica": "SSR/SSG e hidratação progressiva",
+        "descricao": "Gerar HTML no servidor (ou estático) com CSS crítico, e ativar funcionalidades JS depois para melhor performance inicial.",
+        "links": [
+          "https://webpack.js.org/guides/code-splitting/", 
+          "https://legacy.reactjs.org/docs/code-splitting.html"
+        ]
+      }
+    ]
+  }
+  
