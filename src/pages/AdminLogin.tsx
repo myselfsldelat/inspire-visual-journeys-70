@@ -11,8 +11,8 @@ import { Loader2, Shield, Settings, Eye, EyeOff, UserPlus, Mail, CheckCircle } f
 import { useToast } from '@/hooks/use-toast';
 
 const AdminLogin: React.FC = () => {
-  const [email, setEmail] = useState('admin@bikenight.com');
-  const [password, setPassword] = useState('BikeNight2024!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -129,11 +129,6 @@ const AdminLogin: React.FC = () => {
     navigate('/admin-setup?create-new=true');
   };
 
-  const useDefaultCredentials = () => {
-    setEmail('admin@bikenight.com');
-    setPassword('BikeNight2024!');
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-event-dark via-gray-800 to-event-blue p-4">
       <Card className="w-full max-w-md">
@@ -156,26 +151,6 @@ const AdminLogin: React.FC = () => {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-
-            {/* Default credentials info */}
-            <Alert>
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Credenciais padrão:</strong>
-                <br />Email: admin@bikenight.com
-                <br />Senha: BikeNight2024!
-                <div className="mt-2">
-                  <Button 
-                    type="button"
-                    variant="outline" 
-                    size="sm"
-                    onClick={useDefaultCredentials}
-                  >
-                    Usar Credenciais Padrão
-                  </Button>
-                </div>
-              </AlertDescription>
-            </Alert>
 
             {showEmailNotConfirmed && (
               <Alert>

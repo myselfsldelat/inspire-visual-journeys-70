@@ -27,12 +27,12 @@ const OptimizedAdminRoute: React.FC<OptimizedAdminRouteProps> = ({ children }) =
 
   // Redirect to login if not authenticated
   if (!user) {
-    return <Navigate to="/admin-login" replace />;
+    return <Navigate to="/recebavasoadmin" replace />;
   }
 
-  // Redirect to login if not admin
+  // Redirect to access denied page if authenticated but not admin
   if (!isAdmin) {
-    return <Navigate to="/admin-login" replace />;
+    return <Navigate to="/acesso-negado" replace />;
   }
 
   // Render admin content with suspense boundary

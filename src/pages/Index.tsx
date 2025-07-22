@@ -58,18 +58,6 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Admin Access Button */}
-      <div className="fixed top-4 right-4 z-50">
-        <Link to="/admin-login">
-          <Button
-            size="default"
-            className="bg-event-orange hover:bg-orange-600 text-white shadow-lg transform transition-transform hover:scale-105"
-          >
-            <Shield className="h-4 w-4 mr-2" />
-            Admin
-          </Button>
-        </Link>
-      </div>
 
       <HeroSection 
         onDiscoverClick={() => {

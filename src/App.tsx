@@ -10,6 +10,7 @@ import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
 import AdminSetup from "./pages/AdminSetup";
 import NotFound from "./pages/NotFound";
+import AccessDenied from "./pages/AccessDenied";
 
 const queryClient = new QueryClient();
 
@@ -22,9 +23,10 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/recebavasoadmin" element={<AdminLogin />} />
             <Route path="/admin-setup" element={<AdminSetup />} />
             <Route path="/admin/*" element={<Admin />} />
+            <Route path="/acesso-negado" element={<AccessDenied />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

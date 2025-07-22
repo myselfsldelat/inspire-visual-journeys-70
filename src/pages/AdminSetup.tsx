@@ -117,7 +117,7 @@ const AdminSetup: React.FC = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/admin-login`,
+          emailRedirectTo: `${window.location.origin}/recebavasoadmin`,
           data: {
             role: adminRole
           }
@@ -165,7 +165,7 @@ const AdminSetup: React.FC = () => {
         });
 
         setTimeout(() => {
-          navigate('/admin-login');
+          navigate('/recebavasoadmin');
         }, 3000);
       }
     } catch (error: any) {
@@ -224,7 +224,7 @@ const AdminSetup: React.FC = () => {
               </Alert>
               
               <Button 
-                onClick={() => navigate('/admin-login')}
+                onClick={() => navigate('/recebavasoadmin')}
                 className="w-full bg-event-orange hover:bg-orange-600"
               >
                 Fazer Login como Super Admin
@@ -267,7 +267,7 @@ const AdminSetup: React.FC = () => {
               </p>
               
               <Button 
-                onClick={() => navigate('/admin-login')}
+                onClick={() => navigate('/recebavasoadmin')}
                 className="w-full bg-event-orange hover:bg-orange-600"
               >
                 Ir para Login
