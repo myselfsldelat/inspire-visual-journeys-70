@@ -1,8 +1,11 @@
 
-import { useState, useEffect } from 'react';
-import { supabaseCustom } from '@/integrations/supabase/client-custom';
-import { GalleryItem as GalleryItemType } from '@/data/gallery';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types'; // Corrected import
 import { useToast } from '@/hooks/use-toast';
+
+// Define the specific type for a gallery item using the generic 'Tables' type from Supabase.
+type GalleryItemType = Tables<'gallery_items'>;
 
 interface UseGalleryItemsProps {
   pageSize?: number;
@@ -21,81 +24,54 @@ const useGalleryItems = ({
   const [currentPage, setCurrentPage] = useState(initialPage);
   const { toast } = useToast();
 
-  // Calculate total pages
   const totalPages = Math.ceil(totalItems / pageSize);
   const hasNextPage = currentPage < totalPages - 1;
   const hasPreviousPage = currentPage > 0;
 
-  const loadFallbackData = async () => {
-    try {
-      const { galleryItems } = await import('@/data/gallery');
-      const startIndex = currentPage * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedItems = galleryItems.slice(startIndex, endIndex);
-      
-      setItems(paginatedItems);
-      setTotalItems(galleryItems.length);
-      setError(null);
-      console.log('Loaded fallback gallery data:', paginatedItems.length, 'items');
-    } catch (fallbackError) {
-      console.error('Failed to load fallback data:', fallbackError);
-      setError('Não foi possível carregar as imagens da galeria.');
-      setItems([]);
-    }
-  };
+  const fetchItems = useCallback(async (isRefresh = false, page = currentPage) => {
+    if (isRefresh) setRefreshing(true);
+    setLoading(true);
+    setError(null);
 
-  const fetchItems = async (showToast = false, page = currentPage) => {
     try {
-      setLoading(true);
-      setError(null);
-      if (showToast) setRefreshing(true);
-
       console.log('Attempting to fetch gallery items from Supabase...');
-
-      // Try to get items from Supabase first
-      const { data, error, count } = await (supabaseCustom as any)
+      const { data, error: queryError, count } = await supabase
         .from('gallery_items')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
         .range(page * pageSize, (page * pageSize) + pageSize - 1);
-      
-      if (error) {
-        console.error('Supabase query error:', error);
-        throw error;
+
+      if (queryError) {
+        throw queryError;
       }
-      
-      console.log('Successfully fetched from Supabase:', data?.length || 0, 'items');
-      
+
       setItems(data || []);
       setTotalItems(count || 0);
       setCurrentPage(page);
-      
-      if (showToast) {
+
+      if (isRefresh) {
         toast({
-          title: 'Galeria atualizada',
-          description: 'As imagens foram carregadas com sucesso.',
+          title: 'Galeria Atualizada',
+          description: 'As imagens mais recentes foram carregadas.',
         });
       }
-    } catch (error: any) {
-      console.error('Error fetching gallery items:', error);
+    } catch (err: any) {
+      console.error('Error fetching gallery items:', err);
+      setError('Não foi possível carregar a galeria. Verifique sua conexão e tente novamente.');
+      setItems([]);
       
-      // Always fall back to local data on any error
-      console.log('Falling back to local gallery data...');
-      await loadFallbackData();
-      
-      // Only show error toast if user explicitly refreshed
-      if (showToast) {
+      if (isRefresh) {
         toast({
-          title: 'Usando dados locais',
-          description: 'Conecte-se para ver a galeria completa.',
+          title: 'Erro ao Atualizar',
+          description: 'Não foi possível buscar novas imagens.',
           variant: 'destructive',
         });
       }
     } finally {
       setLoading(false);
-      if (showToast) setRefreshing(false);
+      if (isRefresh) setRefreshing(false);
     }
-  };
+  }, [page, pageSize, toast]);
 
   const goToNextPage = () => {
     if (hasNextPage) {
@@ -118,11 +94,10 @@ const useGalleryItems = ({
   const handleImageError = (index: number) => {
     setItems(current => {
       const updated = [...current];
-      if (updated[index]) {
-        updated[index] = {
-          ...updated[index],
-          image: "/placeholder.svg"
-        };
+      const item = updated[index];
+      if (item) {
+        // Corrected property name from 'image_url' to 'image'
+        item.image = "/placeholder.svg"; 
       }
       return updated;
     });
@@ -130,7 +105,7 @@ const useGalleryItems = ({
 
   useEffect(() => {
     fetchItems();
-  }, []);
+  }, [fetchItems]);
 
   return {
     items,
@@ -148,8 +123,8 @@ const useGalleryItems = ({
       goToPreviousPage,
       goToPage,
       pageSize,
-      totalItems
-    }
+      totalItems,
+    },
   };
 };
 
