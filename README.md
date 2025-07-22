@@ -88,3 +88,22 @@ O projeto está configurado para ser implantado na [Vercel](https://vercel.com/)
 ## 🤝 Como Contribuir
 
 Contribuições são sempre bem-vindas! Se você deseja melhorar o projeto, sinta-se à vontade para abrir uma *Issue* ou enviar um *Pull Request*.
+
+## 📜 Histórico de Soluções Notáveis
+
+Esta seção documenta investigações e correções importantes que servem como aprendizado para a equipe.
+
+### Correção: Erro Crítico na Renderização da Galeria (Julho/2024)
+
+*   **Problema:** A aplicação estava falhando em produção com um erro `Minified React error #130`, o que impedia a renderização de qualquer componente que dependesse de dados do Supabase, mais notavelmente a galeria de fotos.
+
+*   **Investigação:**
+    1.  A análise inicial apontou que o erro do React era um sintoma, não a causa. Ele ocorria porque o componente da galeria tentava renderizar `undefined`.
+    2.  A investigação no código levou ao hook `useGalleryItems`, que por sua vez utilizava um cliente Supabase (`supabaseCustom`) com a verificação de tipos desabilitada (`as any`). Isso mascarava o erro real.
+    3.  A causa raiz foi encontrada no arquivo `src/integrations/supabase/client.ts`. O cliente Supabase estava sendo inicializado com chaves de acesso (URL e Anon Key) fixas no código (`hardcoded`). Essas chaves não correspondiam às credenciais corretas configuradas no ambiente de produção da Vercel.
+
+*   **Solução:**
+    1.  O arquivo `src/integrations/supabase/client.ts` foi modificado para ler as credenciais do Supabase a partir das variáveis de ambiente (`process.env.VITE_SUPABASE_URL` e `process.env.VITE_SUPABASE_ANON_KEY`), garantindo que a aplicação utilize as chaves corretas para cada ambiente (desenvolvimento e produção).
+    2.  Com a inicialização do cliente corrigida, a comunicação com o Supabase foi restabelecida, e o erro de renderização foi resolvido.
+
+*   **Lição Aprendida:** Credenciais e configurações de ambiente **nunca** devem ser fixadas no código-fonte. Devem sempre ser gerenciadas através de variáveis de ambiente para garantir segurança e portabilidade entre diferentes estágios de deploy.
