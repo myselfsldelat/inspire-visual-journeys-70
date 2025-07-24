@@ -36,8 +36,8 @@ export interface GalleryItem {
   description?: string;
   motivation?: string;
   personal_message?: string;
-  media_type?: string;
-  is_external_link?: boolean;
+  type: 'image' | 'video';
+  video_url?: string;
   created_at: string;
 }
 

@@ -16,6 +16,12 @@ export const supabaseOperations = {
       .order('created_at', { ascending: false });
   },
 
+  async insertGalleryItem(data: any) {
+    return await supabaseCustom
+      .from('gallery_items')
+      .insert([data]);
+  },
+
   async updateGalleryItem(id: string, data: any) {
     return await supabaseCustom
       .from('gallery_items')
