@@ -7,13 +7,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/AuthProvider";
 
-// Lazy load the page components
-const Index = lazy(() => import("./pages/Index"));
-const Admin = lazy(() => import("./pages/Admin"));
-const AdminLogin = lazy(() => import("./pages/AdminLogin"));
-const AdminSetup = lazy(() => import("./pages/AdminSetup"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const AccessDenied = lazy(() => import("./pages/AccessDenied"));
+// Lazy load the page components using aliases for robust path resolution
+const Index = lazy(() => import("@/pages/Index"));
+const Admin = lazy(() => import("@/pages/Admin"));
+const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
+const AdminSetup = lazy(() => import("@/pages/AdminSetup"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const AccessDenied = lazy(() => import("@/pages/AccessDenied"));
 
 const queryClient = new QueryClient();
 
