@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
-import { Edit, Trash, Image, Plus, Camera, RefreshCw, Loader2, Upload, Link, Users } from 'lucide-react';
+import { Edit, Trash, Image, Plus, Camera, RefreshCw, Loader2, Upload, Link as LinkIcon, Users } from 'lucide-react'; // Renomeado Link para LinkIcon
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import MediaUploadManager from './MediaUploadManager';
 import MediaLinkUploader from './MediaLinkUploader';
@@ -82,12 +82,13 @@ const AdminGalleryManager: React.FC = () => {
       if (error) throw error;
       
       setItems(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar imagens da galeria';
       console.error('Error fetching gallery items:', error);
-      setError(error.message || 'Erro ao carregar imagens da galeria');
+      setError(errorMessage);
       toast({
         title: 'Erro ao carregar imagens',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -131,11 +132,12 @@ const AdminGalleryManager: React.FC = () => {
       
       setIsEditModalOpen(false);
       fetchGalleryItems();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao atualizar item';
       console.error('Error updating gallery item:', error);
       toast({
         title: 'Erro ao atualizar item',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -156,30 +158,27 @@ const AdminGalleryManager: React.FC = () => {
       
       setIsDeleteModalOpen(false);
       fetchGalleryItems();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao excluir item';
       console.error('Error deleting gallery item:', error);
       toast({
         title: 'Erro ao excluir item',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
     }
   };
 
   const renderMediaPreview = (item: GalleryItem) => {
-    const isVideo = item.media_type === 'video' || 
-                   item.image.includes('.mp4') || 
-                   item.image.includes('video');
+    const isVideo = item.type === 'video';
     
     if (isVideo) {
       return (
         <video 
-          src={item.image} 
+          src={item.video_url || item.image} 
           className="w-full h-full object-cover"
+          controls
           muted
-          onError={(e) => {
-            (e.target as HTMLVideoElement).style.display = 'none';
-          }}
         />
       );
     }
@@ -201,7 +200,7 @@ const AdminGalleryManager: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <Camera className="h-8 w-8 text-event-orange" />
-          <h2 className="text-3xl font-bold text-event-dark">Painel Administrativo</h2>
+          <h2 className="text-3xl font-bold text-event-dark">Gerenciador da Galeria</h2>
         </div>
         <Button 
           onClick={refreshGallery}
@@ -218,36 +217,28 @@ const AdminGalleryManager: React.FC = () => {
         </Button>
       </div>
 
-      <Tabs defaultValue="upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-6">
+      <Tabs defaultValue="manage" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="manage" className="flex items-center gap-2 py-3">
+            <Image className="h-4 w-4" />
+            Gerenciar Mídia ({items.length})
+          </TabsTrigger>
           <TabsTrigger value="upload" className="flex items-center gap-2 py-3">
             <Upload className="h-4 w-4" />
             Upload de Arquivos
           </TabsTrigger>
           <TabsTrigger value="links" className="flex items-center gap-2 py-3">
-            <Link className="h-4 w-4" />
+            <LinkIcon className="h-4 w-4" />
             Adicionar por Link
-          </TabsTrigger>
-          <TabsTrigger value="manage" className="flex items-center gap-2 py-3">
-            <Image className="h-4 w-4" />
-            Gerenciar Galeria ({items.length})
-          </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2 py-3">
-            <Users className="h-4 w-4" />
-            Usuários Admin
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="upload" className="mt-6">
-          <MediaUploadManager />
+          <MediaUploadManager onUploadComplete={fetchGalleryItems} />
         </TabsContent>
 
         <TabsContent value="links" className="mt-6">
           <MediaLinkUploader />
-        </TabsContent>
-
-        <TabsContent value="users" className="mt-6">
-          <AdminUserManager />
         </TabsContent>
 
         <TabsContent value="manage" className="mt-6">
@@ -276,26 +267,13 @@ const AdminGalleryManager: React.FC = () => {
                   <div className="h-48 overflow-hidden bg-gray-100 relative">
                     {renderMediaPreview(item)}
                     
-                    {item.is_external_link && (
-                      <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded text-xs">
-                        Link
-                      </div>
-                    )}
+                    <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded text-xs capitalize">
+                        {item.type}
+                    </div>
                   </div>
                   
                   <div className="p-4">
                     <h3 className="font-semibold text-lg mb-2 text-gray-800 line-clamp-1">{item.title}</h3>
-                    <p className="text-gray-600 text-sm line-clamp-2 h-10 mb-3">
-                      {item.description || 'Sem descrição'}
-                    </p>
-                    
-                    {item.personal_message && (
-                      <div className="mb-3 p-2 bg-blue-50 border-l-4 border-blue-500 rounded">
-                        <p className="text-sm text-blue-700 italic">
-                          "{item.personal_message}"
-                        </p>
-                      </div>
-                    )}
                     
                     <div className="text-xs text-gray-500 mb-3">
                       Adicionado em: {new Date(item.created_at).toLocaleDateString('pt-BR')}
@@ -384,34 +362,6 @@ const AdminGalleryManager: React.FC = () => {
                     <FormLabel>Descrição</FormLabel>
                     <FormControl>
                       <Textarea placeholder="Descrição do item" rows={3} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="motivation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mensagem Motivacional</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Mensagem inspiradora" rows={3} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="personal_message"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mensagem Pessoal</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Mensagem pessoal para este item" rows={4} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

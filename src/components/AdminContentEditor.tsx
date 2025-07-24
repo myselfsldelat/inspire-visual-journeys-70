@@ -2,9 +2,7 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseOperations } from '@/integrations/supabase/client-custom';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { useForm, Controller, Control } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -15,34 +13,36 @@ import { toast as sonnerToast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 
-const contentSchema = z.object({
-  history_title: z.string().min(1, 'Título é obrigatório'),
-  history_subtitle: z.string().min(1, 'Subtítulo é obrigatório'),
-  history_event_title: z.string().min(1, 'Título do evento é obrigatório'),
-  history_main_title: z.string().min(1, 'Título principal é obrigatório'),
-  history_p1: z.string().min(1, 'Parágrafo 1 é obrigatório'),
-  history_p2: z.string().min(1, 'Parágrafo 2 é obrigatório'),
-  history_p3: z.string().min(1, 'Parágrafo 3 é obrigatório'),
-});
+// No static Zod schema needed anymore, making it dynamic.
 
-type ContentFormData = z.infer<typeof contentSchema>;
+type SiteContent = {
+  key: string;
+  content: string;
+};
+
+// The form data will be a dynamic object based on fetched content.
+type ContentFormData = Record<string, string>;
 
 const AdminContentEditor: React.FC = () => {
   const queryClient = useQueryClient();
 
-  const { data: contentData, isLoading, isError, error } = useQuery({
+  const { data: siteContent, isLoading, isError, error } = useQuery<SiteContent[], Error>({
     queryKey: ['site_content'],
     queryFn: async () => {
       const { data, error } = await supabaseOperations.getSiteContent();
       if (error) throw new Error(error.message);
-
-      // Transform array to object for form
-      return data.reduce((acc, item) => {
-        acc[item.key] = item.content;
-        return acc;
-      }, {} as Record<string, string>);
+      return data;
     },
   });
+
+  // Transform the array of content into an object for the form.
+  const initialFormData = React.useMemo(() => {
+    if (!siteContent) return {};
+    return siteContent.reduce((acc, item) => {
+      acc[item.key] = item.content;
+      return acc;
+    }, {} as ContentFormData);
+  }, [siteContent]);
 
   const {
     control,
@@ -50,29 +50,31 @@ const AdminContentEditor: React.FC = () => {
     formState: { isDirty, isSubmitting },
     reset,
   } = useForm<ContentFormData>({
-    resolver: zodResolver(contentSchema),
-    values: contentData as ContentFormData,
+    defaultValues: initialFormData,
   });
 
   React.useEffect(() => {
-    if (contentData) {
-      reset(contentData as ContentFormData);
-    }
-  }, [contentData, reset]);
+    // When the fetched data changes, reset the form with the new values.
+    reset(initialFormData);
+  }, [initialFormData, reset]);
 
   const mutation = useMutation({
     mutationFn: (newContent: ContentFormData) => {
+      // Transform the form data back into an array of objects for the update operation.
       const updates = Object.entries(newContent).map(([key, content]) => ({
         key,
         content,
       }));
       return supabaseOperations.updateSiteContent(updates);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+        if (data.error) {
+            throw new Error(data.error.message);
+        }
       sonnerToast.success('Conteúdo salvo com sucesso!');
       queryClient.invalidateQueries({ queryKey: ['site_content'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       sonnerToast.error('Erro ao salvar conteúdo.', {
         description: error.message,
       });
@@ -120,18 +122,23 @@ const AdminContentEditor: React.FC = () => {
       <CardHeader>
         <CardTitle>Editor de Conteúdo do Site</CardTitle>
         <CardDescription>
-          Altere os textos da seção "Nossa História" aqui. As alterações serão refletidas na página inicial.
+          Altere os textos do site aqui. As alterações serão refletidas publicamente.
+          Para adicionar um novo campo, basta inseri-lo na tabela 'site_content' do Supabase.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <Field control={control} name="history_title" label="Título Principal da Seção" />
-          <Field control={control} name="history_subtitle" label="Subtítulo da Seção" component="textarea" />
-          <Field control={control} name="history_event_title" label="Título do Evento (Ex: 2013 - O Início)" />
-          <Field control={control} name="history_main_title" label="Título da História (Ex: Como Tudo Começou)" />
-          <Field control={control} name="history_p1" label="Primeiro Parágrafo" component="textarea" />
-          <Field control={control} name="history_p2" label="Segundo Parágrafo" component="textarea" />
-          <Field control={control} name="history_p3" label="Terceiro Parágrafo" component="textarea" />
+          {/* Dynamically generate form fields from the fetched site content */}
+          {siteContent && siteContent.map(({ key, content }) => (
+            <Field
+              key={key}
+              control={control}
+              name={key}
+              label={key.replace(/_/g, ' ').replace(/\w/g, l => l.toUpperCase())} // Format key for display
+              // Use textarea for longer content, input for shorter content
+              component={content.length > 100 ? 'textarea' : 'input'}
+            />
+          ))}
           
           <Button type="submit" disabled={!isDirty || isSubmitting}>
             {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
@@ -142,8 +149,8 @@ const AdminContentEditor: React.FC = () => {
   );
 };
 
-// Helper component for form fields
-const Field = ({ control, name, label, component = 'input' }: { control: any; name: keyof ContentFormData; label: string; component?: 'input' | 'textarea' }) => {
+// Helper component for form fields, now using a dynamic name
+const Field = ({ control, name, label, component = 'input' }: { control: Control<ContentFormData>; name: string; label: string; component?: 'input' | 'textarea' }) => {
   const Component = component === 'input' ? Input : Textarea;
   return (
     <Controller

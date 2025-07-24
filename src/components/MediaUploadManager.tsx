@@ -19,7 +19,11 @@ import {
 import useMediaUpload from '@/hooks/useMediaUpload';
 import { cn } from '@/lib/utils';
 
-const MediaUploadManager: React.FC = () => {
+interface MediaUploadManagerProps {
+  onUploadComplete?: () => void;
+}
+
+const MediaUploadManager: React.FC<MediaUploadManagerProps> = ({ onUploadComplete }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [metadata, setMetadata] = useState({
     title: '',
@@ -73,6 +77,7 @@ const MediaUploadManager: React.FC = () => {
     if (success) {
       setSelectedFiles([]);
       setMetadata({ title: '', description: '', motivation: '' });
+      onUploadComplete?.();
     }
   };
 
