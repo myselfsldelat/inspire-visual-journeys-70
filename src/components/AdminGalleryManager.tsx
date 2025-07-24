@@ -3,8 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { supabaseCustom } from '@/integrations/supabase/client-custom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ShieldCheck, UserCog, AlertCircle, Loader2, History } from 'lucide-react';
-import { reportService, AdminUser } from '@/integrations/supabase/reportService'; // Reutilizando nosso serviço
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+// Tipagem forte diretamente no componente
+interface AdminUser {
+  email: string;
+  role: string;
+}
 
 interface AuditLog {
   id: string;
@@ -14,6 +19,43 @@ interface AuditLog {
   details: any;
 }
 
+// Lógica de busca de dados incorporada
+async function fetchAuditData() {
+  // 1. Relatório de Hierarquia
+  const { data: profiles, error: profilesError } = await supabaseCustom
+    .from('admin_profiles')
+    .select('id, role');
+
+  if (profilesError) throw new Error(`Falha ao buscar perfis: ${profilesError.message}`);
+  
+  let reportData = { superAdmins: [], admins: [] };
+  if (profiles && profiles.length > 0) {
+    const adminUsers: AdminUser[] = await Promise.all(
+      profiles.map(async (profile) => {
+        const { data: userResponse, error: userError } = await supabaseCustom.auth.admin.getUserById(profile.id);
+        const email = userError ? `ID Órfão: ${profile.id}` : userResponse.user.email;
+        return { email, role: profile.role };
+      })
+    );
+    reportData = {
+      superAdmins: adminUsers.filter(u => u.role === 'super_admin'),
+      admins: adminUsers.filter(u => u.role === 'admin')
+    };
+  }
+
+  // 2. Trilha de Auditoria
+  const { data: auditData, error: auditError } = await supabaseCustom
+    .from('audit_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(15);
+  
+  if (auditError) throw new Error(`Falha ao buscar trilha de auditoria: ${auditError.message}`);
+
+  return { reportData, auditLogs: auditData };
+}
+
+
 const AuditView: React.FC = () => {
   const [report, setReport] = useState<{ superAdmins: AdminUser[], admins: AdminUser[] }>({ superAdmins: [], admins: [] });
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -21,30 +63,13 @@ const AuditView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAuditData = async () => {
-      try {
-        // Fase 1: Relatório de Hierarquia
-        const reportData = await reportService.getAdminReport();
+    fetchAuditData()
+      .then(({ reportData, auditLogs }) => {
         setReport(reportData);
-
-        // Fase 2: Trilha de Auditoria
-        const { data: auditData, error: auditError } = await supabaseCustom
-          .from('audit_logs')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(15);
-        
-        if (auditError) throw new Error(`Falha ao buscar trilha de auditoria: ${auditError.message}`);
-        setLogs(auditData);
-
-      } catch (err) {
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAuditData();
+        setLogs(auditLogs);
+      })
+      .catch(err => setError((err as Error).message))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -109,7 +134,7 @@ const AuditView: React.FC = () => {
                   <TableCell>{new Date(log.created_at).toLocaleString('pt-BR')}</TableCell>
                   <TableCell>{log.action}</TableCell>
                   <TableCell>{log.entity}</TableCell>
-                  <TableCell><pre className="text-xs">{JSON.stringify(log.details, null, 2)}</pre></TableCell>
+                  <TableCell><pre className="text-xs bg-gray-100 p-2 rounded">{JSON.stringify(log.details, null, 2)}</pre></TableCell>
                 </TableRow>
               ))}
             </TableBody>
