@@ -16,10 +16,20 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDiscoverClick, onPurposeCli
           className="absolute inset-0 bg-black opacity-60 z-10"
           aria-hidden="true"
         ></div>
+        
+        {/* Imagem para PC (visível em telas 'md' e maiores) */}
         <img
           src="/images/866ebab1-6af1-45a7-8700-70b512305b2e.png"
           alt="BIKE NIGHT AMAZONAS, com ciclistas coloridos pedalando em um fundo urbano noturno"
-          className="w-full h-full object-cover"
+          className="hidden md:block w-full h-full object-cover"
+          loading="lazy"
+        />
+        
+        {/* Imagem para Mobile (escondida em telas 'md' e maiores) */}
+        <img
+          src="/images/logo-mobile-hero.png"
+          alt="Logo do Bike Night Amazonas em destaque"
+          className="block md:hidden w-full h-full object-cover"
           loading="lazy"
         />
       </div>
