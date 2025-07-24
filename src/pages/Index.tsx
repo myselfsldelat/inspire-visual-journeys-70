@@ -6,7 +6,7 @@ import CallToAction from '@/components/CallToAction';
 import Footer from '@/components/Footer';
 import ImageModal from '@/components/ImageModal';
 import HistorySection from '@/components/HistorySection';
-import SponsorsSection from '@/components/SponsorsSection'; // Importando a nova seção
+import SponsorsSection from '@/components/SponsorsSection';
 import { GalleryItem as GalleryItemType } from '@/data/gallery';
 
 const Index: React.FC = () => {
@@ -66,7 +66,7 @@ const Index: React.FC = () => {
       />
       
       <CallToAction 
-        onParticipateClick={() => {
+        onDiscoverClick={() => {
            const sponsorsElement = document.getElementById('sponsors');
            if (sponsorsElement) {
              sponsorsElement.scrollIntoView({ behavior: 'smooth' });
