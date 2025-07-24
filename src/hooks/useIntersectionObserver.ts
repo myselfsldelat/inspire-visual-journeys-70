@@ -1,46 +1,53 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
-interface UseIntersectionObserverProps {
+interface IntersectionObserverOptions {
   threshold?: number;
-  rootMargin?: string;
   root?: Element | null;
+  rootMargin?: string;
+  triggerOnce?: boolean;
 }
 
-export function useIntersectionObserver({
-  threshold = 0.1,
-  rootMargin = '0px',
-  root = null,
-}: UseIntersectionObserverProps = {}) {
+// O hook retorna uma "ref de callback" e o estado de interseção.
+type UseIntersectionObserverResponse = [(node: HTMLElement | null) => void, boolean];
+
+const useIntersectionObserver = (options: IntersectionObserverOptions = {}): UseIntersectionObserverResponse => {
+  const { threshold = 0.1, root = null, rootMargin = '0px', triggerOnce = true } = options;
   const [isIntersecting, setIsIntersecting] = useState(false);
-  const [hasIntersected, setHasIntersected] = useState(false);
-  const elementRef = useRef<Element | null>(null);
+  
+  // Usamos useRef para manter a mesma instância do observer entre as renderizações
+  const observer = useRef<IntersectionObserver | null>(null);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        const isElementIntersecting = entry.isIntersecting;
-        setIsIntersecting(isElementIntersecting);
-        
-        // Once the element has been intersected once, we remember that
-        if (isElementIntersecting && !hasIntersected) {
-          setHasIntersected(true);
-        }
-      },
-      { threshold, rootMargin, root }
-    );
-
-    const element = elementRef.current;
-    if (element) {
-      observer.observe(element);
+  // A ref de callback é uma forma avançada e performática de obter a referência do DOM
+  const ref = useCallback((node: HTMLElement | null) => {
+    // Se já temos um observer, desconectamos para limpar
+    if (observer.current) {
+      observer.current.disconnect();
     }
 
-    return () => {
-      if (element) {
-        observer.unobserve(element);
+    // Criamos um novo observer e o guardamos na ref
+    observer.current = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsIntersecting(true);
+        // Se for para disparar apenas uma vez, paramos de observar o elemento
+        if (triggerOnce && observer.current) {
+          observer.current.unobserve(entry.target);
+        }
+      } else {
+        // Se não for para disparar apenas uma vez, podemos resetar o estado
+        if (!triggerOnce) {
+          setIsIntersecting(false);
+        }
       }
-    };
-  }, [threshold, rootMargin, root, hasIntersected]);
+    }, { threshold, root, rootMargin });
 
-  return { elementRef, isIntersecting, hasIntersected };
-}
+    // Se o elemento do DOM existir, começamos a observá-lo
+    if (node) {
+      observer.current.observe(node);
+    }
+  }, [threshold, root, rootMargin, triggerOnce]);
+
+  return [ref, isIntersecting];
+};
+
+export default useIntersectionObserver;

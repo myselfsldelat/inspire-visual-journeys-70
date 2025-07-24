@@ -1,5 +1,4 @@
 import React, { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import HeroSection from '@/components/HeroSection';
 import PurposeSection from '@/components/PurposeSection';
 import Gallery, { GalleryRef } from '@/components/Gallery';
@@ -7,17 +6,12 @@ import CallToAction from '@/components/CallToAction';
 import Footer from '@/components/Footer';
 import ImageModal from '@/components/ImageModal';
 import HistorySection from '@/components/HistorySection';
-import ParticipationForm from '@/components/ParticipationForm';
-import { Button } from '@/components/ui/button';
-import { Shield } from 'lucide-react';
+import SponsorsSection from '@/components/SponsorsSection'; // Importando a nova seção
 import { GalleryItem as GalleryItemType } from '@/data/gallery';
-import { useToast } from '@/hooks/use-toast';
 
 const Index: React.FC = () => {
   const purposeRef = useRef<HTMLElement>(null);
   const galleryRef = useRef<GalleryRef>(null);
-  const participationRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
   
   const [selectedItem, setSelectedItem] = useState<GalleryItemType | undefined>(undefined);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,31 +19,23 @@ const Index: React.FC = () => {
   const scrollToRef = (ref: React.RefObject<HTMLElement>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
+  
   const handleItemClick = (item: GalleryItemType) => {
     setSelectedItem(item);
     setIsModalOpen(true);
   };
 
-  const handleParticipateClick = () => {
-    participationRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   const handleNextImage = () => {
     if (galleryRef.current) {
       const nextItem = galleryRef.current.navigateToNext();
-      if (nextItem) {
-        setSelectedItem(nextItem);
-      }
+      setSelectedItem(nextItem);
     }
   };
 
   const handlePreviousImage = () => {
     if (galleryRef.current) {
       const prevItem = galleryRef.current.navigateToPrevious();
-      if (prevItem) {
-        setSelectedItem(prevItem);
-      }
+      setSelectedItem(prevItem);
     }
   };
 
@@ -57,12 +43,11 @@ const Index: React.FC = () => {
   const hasPrevious = galleryRef.current?.hasPrevious() || false;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-50">
 
       <HeroSection 
         onDiscoverClick={() => {
-          // Create a separate ref for scrolling
-          const galleryElement = document.getElementById('gallery-section');
+          const galleryElement = document.getElementById('gallery');
           if (galleryElement) {
             galleryElement.scrollIntoView({ behavior: 'smooth' });
           }
@@ -75,16 +60,21 @@ const Index: React.FC = () => {
       <HistorySection />
       
       <Gallery 
-        id="gallery-section"
+        id="gallery"
         ref={galleryRef} 
         onItemClick={handleItemClick} 
       />
       
-      <div ref={participationRef}>
-        <ParticipationForm />
-      </div>
-      
-      <CallToAction onDiscoverClick={handleParticipateClick} />
+      <CallToAction 
+        onParticipateClick={() => {
+           const sponsorsElement = document.getElementById('sponsors');
+           if (sponsorsElement) {
+             sponsorsElement.scrollIntoView({ behavior: 'smooth' });
+           }
+        }}
+      />
+
+      <SponsorsSection /> 
       
       <Footer />
       

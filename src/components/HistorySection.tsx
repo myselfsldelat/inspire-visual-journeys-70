@@ -2,6 +2,7 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import useIntersectionObserver from '@/hooks/useIntersectionObserver'; // Importando o hook
 
 interface HistorySectionProps {
   className?: string;
@@ -18,8 +19,19 @@ const historyData = {
 };
 
 const HistorySection: React.FC<HistorySectionProps> = ({ className }) => {
+  // Usando o hook. Ele nos dá a ref e um booleano 'isIntersecting'
+  const [ref, isIntersecting] = useIntersectionObserver({ threshold: 0.2, triggerOnce: true });
+
   return (
-    <section className={cn("py-16 bg-gray-50", className)} id="history">
+    <section 
+      ref={ref} // Atribuindo a ref à seção
+      className={cn(
+        "py-16 bg-gray-50 opacity-0 translate-y-4 transition-all duration-1000",
+        { 'opacity-100 translate-y-0': isIntersecting }, // Aplicando classes quando a seção está visível
+        className
+      )} 
+      id="history"
+    >
       <div className="container mx-auto px-4">
         <div className="mb-10 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">{historyData.history_title}</h2>
