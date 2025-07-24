@@ -113,8 +113,12 @@ const AdminAuditView: React.FC = () => {
         if (count !== null) {
           setTotalPages(Math.ceil(count / PAGE_SIZE));
         }
-      } catch (error: any) {
-        setError(error.message || 'Erro ao carregar logs de auditoria');
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError('Erro ao carregar logs de auditoria');
+        }
       } finally {
         setLoading(false);
       }

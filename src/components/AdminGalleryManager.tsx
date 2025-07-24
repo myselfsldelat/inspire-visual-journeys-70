@@ -82,12 +82,13 @@ const AdminGalleryManager: React.FC = () => {
       if (error) throw error;
       
       setItems(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar imagens da galeria';
       console.error('Error fetching gallery items:', error);
-      setError(error.message || 'Erro ao carregar imagens da galeria');
+      setError(errorMessage);
       toast({
         title: 'Erro ao carregar imagens',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -131,11 +132,12 @@ const AdminGalleryManager: React.FC = () => {
       
       setIsEditModalOpen(false);
       fetchGalleryItems();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao atualizar item';
       console.error('Error updating gallery item:', error);
       toast({
         title: 'Erro ao atualizar item',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -156,11 +158,12 @@ const AdminGalleryManager: React.FC = () => {
       
       setIsDeleteModalOpen(false);
       fetchGalleryItems();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao excluir item';
       console.error('Error deleting gallery item:', error);
       toast({
         title: 'Erro ao excluir item',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
     }

@@ -42,6 +42,12 @@ interface CommentWithGallery extends Comment {
   gallery_image?: string;
 }
 
+type CommentWithRawGallery = Comment & {
+  gallery_title: { title: string } | null;
+  gallery_image: { image: string } | null;
+};
+
+
 const AdminCommentsView: React.FC = () => {
   const [comments, setComments] = useState<CommentWithGallery[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,19 +64,19 @@ const AdminCommentsView: React.FC = () => {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        let isPending = tab === 'pending';
+        const isPending = tab === 'pending';
         
         const { data, error, count } = await supabaseOperations.getComments(!isPending, page, PAGE_SIZE);
         
         if (error) throw error;
         
         // Format the results
-        const formattedComments: CommentWithGallery[] = data?.map((comment: any) => {
+        const formattedComments: CommentWithGallery[] = data?.map((comment: CommentWithRawGallery) => {
           const { gallery_title, gallery_image, ...rest } = comment;
           return {
             ...rest,
-            gallery_title: typeof gallery_title === 'object' ? gallery_title?.title : null,
-            gallery_image: typeof gallery_image === 'object' ? gallery_image?.image : null
+            gallery_title: gallery_title?.title,
+            gallery_image: gallery_image?.image
           };
         }) || [];
         
@@ -79,8 +85,12 @@ const AdminCommentsView: React.FC = () => {
         if (count !== null) {
           setTotalPages(Math.ceil(count / PAGE_SIZE));
         }
-      } catch (error: any) {
-        setError(error.message || 'Erro ao carregar comentários');
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError('Erro ao carregar comentários');
+        }
       } finally {
         setLoading(false);
       }
@@ -103,10 +113,10 @@ const AdminCommentsView: React.FC = () => {
       });
       
       setComments(comments.filter(c => c.id !== commentId));
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Erro ao aprovar comentário',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Ocorreu um erro.',
         variant: 'destructive'
       });
     }
@@ -124,10 +134,10 @@ const AdminCommentsView: React.FC = () => {
       });
       
       setComments(comments.filter(c => c.id !== commentId));
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Erro ao rejeitar comentário',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Ocorreu um erro.',
         variant: 'destructive'
       });
     }
@@ -380,7 +390,7 @@ const AdminCommentsView: React.FC = () => {
                 <Button 
                   className="bg-green-600 hover:bg-green-700"
                   onClick={() => {
-                    handleApproveComment(selectedComment.id);
+                    if (selectedComment) handleApproveComment(selectedComment.id);
                     setIsViewDialogOpen(false);
                   }}
                 >
@@ -390,7 +400,7 @@ const AdminCommentsView: React.FC = () => {
                 <Button 
                   variant="destructive"
                   onClick={() => {
-                    handleRejectComment(selectedComment.id);
+                    if (selectedComment) handleRejectComment(selectedComment.id);
                     setIsViewDialogOpen(false);
                   }}
                 >
@@ -406,7 +416,7 @@ const AdminCommentsView: React.FC = () => {
                 <Button 
                   variant="destructive"
                   onClick={() => {
-                    selectedComment && handleRejectComment(selectedComment.id);
+                    if (selectedComment) handleRejectComment(selectedComment.id);
                     setIsViewDialogOpen(false);
                   }}
                 >

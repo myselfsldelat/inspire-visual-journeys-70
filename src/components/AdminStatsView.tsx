@@ -25,8 +25,12 @@ const AdminStatsView: React.FC = () => {
         }
         
         setStats(data || []);
-      } catch (error: any) {
-        setError(error.message || 'Erro ao carregar estatísticas');
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+            setError(error.message);
+        } else {
+            setError('Erro ao carregar estatísticas');
+        }
       } finally {
         setLoading(false);
       }

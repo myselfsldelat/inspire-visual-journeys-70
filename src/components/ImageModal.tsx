@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import { z } from 'zod';
 import { supabaseCustom } from '@/integrations/supabase/client-custom';
 import { GalleryItem as GalleryItemType } from '@/data/gallery';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -10,13 +11,32 @@ import { Textarea } from '@/components/ui/textarea';
 import { X, ChevronLeft, ChevronRight, Heart, MessageCircle, Send, Quote } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-interface Comment {
-  id: string;
-  author_name: string;
-  content: string;
-  created_at: string;
-  is_approved: boolean;
-}
+// Zod Schemas for validation
+const CommentSchema = z.object({
+  id: z.string(),
+  author_name: z.string(),
+  content: z.string(),
+  created_at: z.string().datetime(),
+  is_approved: z.boolean(),
+});
+
+const GalleryItemSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  image: z.string(),
+  title: z.string(),
+  description: z.string(),
+  motivation: z.string(),
+  personal_message: z.string().optional(),
+  media_type: z.enum(['image', 'video']).optional(),
+  is_external_link: z.boolean().optional(),
+  date: z.string().optional(),
+  location: z.string().optional(),
+  created_at: z.string().optional(),
+});
+
+const CommentArraySchema = z.array(CommentSchema);
+
+type Comment = z.infer<typeof CommentSchema>;
 
 interface ImageModalProps {
   item?: GalleryItemType;
@@ -44,6 +64,17 @@ const ImageModal: React.FC<ImageModalProps> = ({
 
   useEffect(() => {
     if (item && isOpen) {
+      // Validate the incoming item
+      const validation = GalleryItemSchema.safeParse(item);
+      if (!validation.success) {
+        console.error("Invalid gallery item properties:", validation.error);
+        toast({
+          title: "Erro de Dados",
+          description: "Os dados do item da galeria são inválidos.",
+          variant: "destructive",
+        });
+        return;
+      }
       fetchComments();
     }
   }, [item, isOpen]);
@@ -61,7 +92,15 @@ const ImageModal: React.FC<ImageModalProps> = ({
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      setComments(data || []);
+      
+      const validation = CommentArraySchema.safeParse(data);
+      if (validation.success) {
+        setComments(validation.data);
+      } else {
+        console.error("Invalid comment data received from Supabase:", validation.error);
+        setComments([]);
+      }
+      
     } catch (error) {
       console.error('Error fetching comments:', error);
     } finally {
@@ -307,3 +346,4 @@ const ImageModal: React.FC<ImageModalProps> = ({
 };
 
 export default ImageModal;
+
