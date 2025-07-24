@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { GalleryItem as GalleryItemType } from '@/data/gallery';
 import { Camera, CalendarIcon, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface GalleryItemProps {
   item: GalleryItemType;
@@ -22,28 +23,31 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ item, onClick }) => {
 
   return (
     <div 
-      className="group relative cursor-pointer overflow-hidden rounded-xl shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
+      className="group relative cursor-pointer overflow-hidden rounded-xl shadow-lg"
       onClick={() => !hasError && onClick(item)}
     >
-      {/* Aspect-Ratio Box: Reserves space and acts as a placeholder */}
-      <div className="aspect-w-1 aspect-h-1 xl:aspect-w-4 xl:aspect-h-3">
+      <div className="aspect-w-1 aspect-h-1">
         {hasError ? (
-          <div className="flex h-full w-full flex-col items-center justify-center bg-gray-100 text-gray-400">
-            <AlertTriangle className="w-10 h-10 mb-2" />
-            <p>Imagem não disponível</p>
+          <div className="flex h-full w-full flex-col items-center justify-center bg-gray-200 text-gray-500">
+            <AlertTriangle className="w-12 h-12 mb-2" />
+            <p className="font-semibold">Imagem Indisponível</p>
           </div>
         ) : (
           <>
-            {/* Skeleton Loader */}
+            {/* Skeleton Loader - fica visível até a imagem carregar */}
             {!isLoaded && (
-              <div className="absolute inset-0 h-full w-full animate-pulse bg-gray-200"></div>
+              <div className="absolute inset-0 h-full w-full animate-pulse bg-gray-300"></div>
             )}
+            {/* Imagem */}
             <img
               src={item.image}
               alt={item.title}
               loading="lazy"
               decoding="async"
-              className={`h-full w-full object-cover transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+              className={cn(
+                'h-full w-full object-cover transition-all duration-500 group-hover:scale-110', // Efeito de zoom no hover
+                isLoaded ? 'opacity-100' : 'opacity-0'
+              )}
               onLoad={handleImageLoad}
               onError={handleImageError}
             />
@@ -51,20 +55,22 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ item, onClick }) => {
         )}
       </div>
       
-      {/* Overlay for text content */}
+      {/* Overlay de Conteúdo */}
       {!hasError && (
-        <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <div className="translate-y-4 transform transition-transform duration-300 group-hover:translate-y-0">
-            <h3 className="text-xl font-bold text-white">{item.title}</h3>
-            {item.date && (
-              <div className="mt-1 flex items-center text-xs text-white/80">
-                <CalendarIcon className="mr-1 h-3 w-3" />
-                <span>{item.date}</span>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+          <div className="absolute bottom-0 left-0 p-6 text-white">
+            <div className="translate-y-4 transform transition-transform duration-500 group-hover:translate-y-0">
+              <h3 className="text-2xl font-bold">{item.title}</h3>
+              {item.date && (
+                <div className="mt-2 flex items-center text-sm text-white/90">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <span>{item.date}</span>
+                </div>
+              )}
+              <div className="mt-4 inline-flex items-center rounded-full bg-event-orange px-3 py-1 text-sm font-semibold text-white shadow-lg">
+                <Camera className="mr-2 h-4 w-4" />
+                Ver Detalhes
               </div>
-            )}
-            <div className="mt-2 inline-flex items-center rounded-full bg-event-orange px-2 py-1 text-xs text-white">
-              <Camera className="mr-1 h-3 w-3" />
-              Ver história
             </div>
           </div>
         </div>
