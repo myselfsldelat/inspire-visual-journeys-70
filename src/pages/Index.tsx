@@ -1,60 +1,95 @@
 
-import { useEffect } from 'react';
-import { supabaseCustom } from '@/integrations/supabase/client-custom';
+import React, { useRef, useState } from 'react';
+import HeroSection from '@/components/HeroSection';
+import PurposeSection from '@/components/PurposeSection';
+import Gallery, { GalleryRef } from '@/components/Gallery';
+import CallToAction from '@/components/CallToAction';
+import Footer from '@/components/Footer';
+import ImageModal from '@/components/ImageModal';
+import HistorySection from '@/components/HistorySection';
+import SponsorsSection from '@/components/SponsorsSection';
+import { GalleryItem as GalleryItemType } from '@/data/gallery';
 
-const ReportPage: React.FC = () => {
-  useEffect(() => {
-    const generateAdminReport = async () => {
-      console.log('--- Relatório de Acesso Administrativo ---');
-      try {
-        const { data: profiles, error: profilesError } = await supabaseCustom
-          .from('admin_profiles')
-          .select('id, role');
+const Index: React.FC = () => {
+  const purposeRef = useRef<HTMLElement>(null);
+  const galleryRef = useRef<GalleryRef>(null);
+  
+  const [selectedItem, setSelectedItem] = useState<GalleryItemType | undefined>(undefined);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-        if (profilesError) throw new Error(`Erro ao buscar perfis: ${profilesError.message}`);
-        if (!profiles || profiles.length === 0) {
-          console.log('Nenhum administrador encontrado.');
-          return;
-        }
+  const scrollToRef = (ref: React.RefObject<HTMLElement>) => {
+    ref.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  const handleItemClick = (item: GalleryItemType) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
 
-        const adminUsers = await Promise.all(
-          profiles.map(async (profile) => {
-            const { data: userResponse, error: userError } = await supabaseCustom.auth.admin.getUserById(profile.id);
-            const email = userError ? `ID Órfão: ${profile.id}` : userResponse.user.email;
-            return { email, role: profile.role };
-          })
-        );
-        
-        const superAdmins = adminUsers.filter(u => u.role === 'super_admin');
-        const admins = adminUsers.filter(u => u.role === 'admin');
+  const handleNextImage = () => {
+    if (galleryRef.current) {
+      const nextItem = galleryRef.current.navigateToNext();
+      setSelectedItem(nextItem);
+    }
+  };
 
-        console.log('👑 SUPER ADMINS:');
-        if (superAdmins.length > 0) {
-          superAdmins.forEach(u => console.log(`   - ${u.email}`));
-        } else {
-          console.log('   Nenhum Super Admin encontrado.');
-        }
+  const handlePreviousImage = () => {
+    if (galleryRef.current) {
+      const prevItem = galleryRef.current.navigateToPrevious();
+      setSelectedItem(prevItem);
+    }
+  };
 
-        console.log('🛡️ ADMINS:');
-        if (admins.length > 0) {
-          admins.forEach(u => console.log(`   - ${u.email}`));
-        } else {
-          console.log('   Nenhum Admin encontrado.');
-        }
-      } catch (error) {
-        console.error(`❌ FALHA NA OPERAÇÃO: ${(error as Error).message}`);
-      }
-    };
-
-    generateAdminReport();
-  }, []);
+  const hasNext = galleryRef.current?.hasNext() || false;
+  const hasPrevious = galleryRef.current?.hasPrevious() || false;
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'monospace', fontSize: '1.2rem' }}>
-      <h1>Relatório de Administradores</h1>
-      <p>Verifique o console do desenvolvedor (F12) para ver o relatório completo.</p>
+    <div className="min-h-screen bg-gray-50">
+
+      <HeroSection 
+        onDiscoverClick={() => {
+          const galleryElement = document.getElementById('gallery');
+          if (galleryElement) {
+            galleryElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }} 
+        onPurposeClick={() => scrollToRef(purposeRef)} 
+      />
+      
+      <PurposeSection ref={purposeRef} />
+      
+      <HistorySection />
+      
+      <Gallery 
+        id="gallery"
+        ref={galleryRef} 
+        onItemClick={handleItemClick} 
+      />
+      
+      <CallToAction 
+        onDiscoverClick={() => {
+           const sponsorsElement = document.getElementById('sponsors');
+           if (sponsorsElement) {
+             sponsorsElement.scrollIntoView({ behavior: 'smooth' });
+           }
+        }}
+      />
+
+      <SponsorsSection /> 
+      
+      <Footer />
+      
+      <ImageModal 
+        item={selectedItem} 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)}
+        onNext={handleNextImage}
+        onPrevious={handlePreviousImage}
+        hasNext={hasNext}
+        hasPrevious={hasPrevious}
+      />
     </div>
   );
 };
 
-export default ReportPage;
+export default Index;
