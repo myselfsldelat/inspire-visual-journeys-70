@@ -3,6 +3,10 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Bike } from 'lucide-react';
 
+// Importando as imagens diretamente para que o Vite as processe
+import heroImageDesktop from '/images/866ebab1-6af1-45a7-8700-70b512305b2e.png';
+import heroImageMobile from '/images/logo-mobile-hero.png';
+
 interface HeroSectionProps {
   onDiscoverClick: () => void;
   onPurposeClick: () => void;
@@ -19,18 +23,18 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDiscoverClick, onPurposeCli
         
         {/* Imagem para PC (visível em telas 'md' e maiores) */}
         <img
-          src="/images/866ebab1-6af1-45a7-8700-70b512305b2e.png"
+          src={heroImageDesktop}
           alt="BIKE NIGHT AMAZONAS, com ciclistas coloridos pedalando em um fundo urbano noturno"
           className="hidden md:block w-full h-full object-cover"
-          loading="lazy"
+          loading="eager" // Carregar a imagem principal de forma prioritária
         />
         
         {/* Imagem para Mobile (escondida em telas 'md' e maiores) */}
         <img
-          src="/images/logo-mobile-hero.png"
+          src={heroImageMobile}
           alt="Logo do Bike Night Amazonas em destaque"
           className="block md:hidden w-full h-full object-cover"
-          loading="lazy"
+          loading="eager" // Carregar a imagem principal de forma prioritária
         />
       </div>
       
