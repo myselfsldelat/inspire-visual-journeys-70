@@ -76,6 +76,28 @@ Para executar este projeto localmente, siga os passos abaixo.
     ```
     O projeto estará disponível em `http://localhost:8080`.
 
+## 📦 Backup do Banco de Dados
+
+Os dados dinâmicos (galeria, comentários, usuários) são um ativo crítico. Para garantir a segurança, realize backups periódicos usando o comando `pg_dump`.
+
+### Comando de Backup
+
+Execute o seguinte comando no seu terminal, substituindo a senha pelo valor correto:
+
+```bash
+PGPASSWORD="'SUA_SENHA_AQUI'" pg_dump -h aws-0-us-east-2.pooler.supabase.com -p 6543 -d postgres -U postgres.hfjkmuonmttsjogmsxak > backup_supabase_$(date +%Y%m%d_%H%M%S).sql
+```
+
+**Análise do Comando:**
+*   `PGPASSWORD="'...'" pg_dump`: Define a senha para a conexão e executa o comando `pg_dump`.
+*   `-h aws-0-us-east-2.pooler.supabase.com`: O host do banco de dados.
+*   `-p 6543`: A porta de conexão.
+*   `-d postgres`: O nome do banco de dados.
+*   `-U postgres.hfjkmuonmttsjogmsxak`: O nome de usuário completo para a conexão.
+*   `> backup_supabase_... .sql`: Redireciona a saída para um arquivo SQL com um nome único baseado na data e hora atuais.
+
+**Importante:** Após gerar o arquivo de backup, armazene-o em um local seguro e criptografado (ex: um cofre de senhas ou armazenamento em nuvem privado).
+
 ## 🌐 Deployment
 
 O projeto está configurado para ser implantado na [Vercel](https://vercel.com/). Qualquer `push` para a branch `main` irá acionar um deploy de produção automaticamente.
