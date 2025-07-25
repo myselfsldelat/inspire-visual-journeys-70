@@ -3,9 +3,11 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Bike } from 'lucide-react';
 
-// Importando as imagens de dentro da pasta `src` para garantir que sejam processadas pelo build
+// A imagem de desktop é carregada localmente.
 import heroImageDesktop from '@/assets/hero-desktop.png';
-import heroImageMobile from '@/assets/hero-mobile.png';
+
+// A imagem de mobile é carregada diretamente do URL do GitHub fornecido pelo Presidente.
+const heroImageMobileUrl = 'https://raw.githubusercontent.com/myselfsldelat/inspire-visual-journeys-70/main/Gemini_Generated_Image_k3drptk3drptk3dr.png';
 
 interface HeroSectionProps {
   onDiscoverClick: () => void;
@@ -14,26 +16,22 @@ interface HeroSectionProps {
 
 const HeroSection: React.FC<HeroSectionProps> = ({ onDiscoverClick, onPurposeClick }) => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
       <div className="absolute inset-0 z-0">
-        <div 
-          className="absolute inset-0 bg-black opacity-60 z-10"
-          aria-hidden="true"
-        ></div>
         
-        {/* Imagem para PC (visível em telas 'md' e maiores) */}
+        {/* Imagem de fundo para PC */}
         <img
           src={heroImageDesktop}
-          alt="BIKE NIGHT AMAZONAS, com ciclistas coloridos pedalando em um fundo urbano noturno"
-          className="hidden md:block w-full h-full object-cover"
+          alt="Ciclistas em um fundo urbano noturno"
+          className="hidden md:block w-full h-full object-cover opacity-50"
           loading="eager"
         />
         
-        {/* Imagem para Mobile (escondida em telas 'md' e maiores) */}
+        {/* Imagem de fundo para Mobile, usando o link direto do GitHub. */}
         <img
-          src={heroImageMobile}
-          alt="Logo do Bike Night Amazonas em destaque"
-          className="block md:hidden w-full h-full object-cover"
+          src={heroImageMobileUrl}
+          alt="Logo do Bike Night Amazonas"
+          className="block md:hidden w-full h-full object-cover opacity-50"
           loading="eager"
         />
       </div>
